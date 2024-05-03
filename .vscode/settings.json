@@ -1,7 +1,0 @@
-{
-	"files.associations": {
-		".clangd": "yaml",
-		"*.ext": "c",
-		"iostream": "cpp"
-	}
-}
