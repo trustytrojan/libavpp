@@ -15,10 +15,11 @@ namespace av
 	{
 		using FrameCallback = std::function<void(const AVFrame *)>;
 
-	private:
+	public:
 		const AVStream *const stream;
-		const AVCodecParameters *const cdpar = stream->codecpar;
-		const AVCodec *const codec = avcodec_find_decoder(cdpar->codec_id);
+		const AVCodec *const codec = avcodec_find_decoder(stream->codecpar->codec_id);
+
+	private:
 		AVCodecContext *_cdctx = avcodec_alloc_context3(codec);
 		AVFrame *frame = av_frame_alloc();
 
@@ -66,7 +67,7 @@ namespace av
 
 		/**
 		 * @brief Sends a packet to the decoder.
-		 * @param packet non-`NULL` pointer to packet to send to decoder. 
+		 * @param packet non-`NULL` pointer to packet to send to decoder.
 		 * @return whether the send was successful
 		 * @note `true` is also returned in the case that the decoder has
 		 * output frames to return to the caller.

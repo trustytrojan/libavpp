@@ -111,12 +111,19 @@ void play_video(const char *const url)
 		{
 			adecoder.send_packet(packet);
 			while (const auto frame = adecoder.receive_frame())
-			{
-				pa_stream.write(is_interleaved(adecoder.cdctx()->sample_fmt)
-									? (void *)frame->extended_data[0]
-									: (void *)frame->extended_data,
-								frame->nb_samples);
-			}
+				try
+				{
+					pa_stream.write(is_interleaved(adecoder.cdctx()->sample_fmt)
+										? (void *)frame->extended_data[0]
+										: (void *)frame->extended_data,
+									frame->nb_samples);
+				}
+				catch (const pa::Error &e)
+				{
+					if (e.code != paOutputUnderflowed)
+						throw;
+					std::cerr << e.what() << "\n";
+				}
 		}
 
 		sf::Event event;

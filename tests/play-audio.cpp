@@ -114,9 +114,9 @@ void without_resampling(const char *const url)
 	decoder.open();
 
 	pa::PortAudio _;
-	pa::Stream pa_stream(0, decoder.cdpar->ch_layout.nb_channels,
+	pa::Stream pa_stream(0, stream->codecpar->ch_layout.nb_channels,
 						 avsf2pasf(cdctx->sample_fmt),
-						 decoder.cdpar->sample_rate,
+						 stream->codecpar->sample_rate,
 						 paFramesPerBufferUnspecified);
 
 	std::cout << "requested sample format: " << av_get_sample_fmt_name(cdctx->request_sample_fmt) << '\n'
