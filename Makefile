@@ -8,10 +8,16 @@ PORTAUDIO_LIBS = -lportaudio
 SOURCES = $(wildcard tests/*.cpp)
 OBJECTS = $(patsubst tests/%.cpp,bin/%,$(SOURCES))
 
-all: clear $(OBJECTS)
+all: clear makedirs $(OBJECTS)
 
 bin/%: tests/%.cpp
 	$(CC) $(CFLAGS) $< $(AV_LIBS) $(SFML_LIBS) $(PORTAUDIO_LIBS) -o $@
 
 clear:
 	clear
+
+makedirs:
+	mkdir -p bin
+
+clean:
+	rm -rf bin
