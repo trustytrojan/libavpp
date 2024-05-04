@@ -2,8 +2,7 @@
 #include <optional>
 #include <cassert>
 
-#include "include/av/MediaFileReader.hpp"
-#include "include/av/StreamDecoder.hpp"
+#include "include/av/MediaReader.hpp"
 #include "include/av/Resampler.hpp"
 #include "include/av/Frame.hpp"
 
@@ -23,33 +22,34 @@ void with_resampling(const char *const url)
 	std::optional<av::Frame> rs_frame_opt;
 	std::optional<av::Resampler> rs_opt;
 
-	const auto cdctx = decoder.cdctx();
-	cdctx->request_sample_fmt = avsf_from_type<SampleFormat, planar>();
+	decoder->request_sample_fmt = avsf_from_type<SampleFormat, planar>();
 	decoder.open();
 
-	const auto interleaved = is_interleaved(cdctx->sample_fmt);
-	const auto different_formats = (cdctx->sample_fmt != cdctx->request_sample_fmt);
+	const auto interleaved = is_interleaved(decoder->sample_fmt);
+	const auto different_formats = (decoder->sample_fmt != decoder->request_sample_fmt);
 
-	std::cout << "requested sample format: " << av_get_sample_fmt_name(cdctx->request_sample_fmt)
-			  << "\ncodec/sample_fmt: " << avcodec_get_name(decoder.codec->id) << '/' << av_get_sample_fmt_name(cdctx->sample_fmt) << '\n';
+	std::cout << "requested sample format: " << av_get_sample_fmt_name(decoder->request_sample_fmt)
+			  << "\ncodec/sample_fmt: " << avcodec_get_name(decoder->codec_id) << '/' << av_get_sample_fmt_name(decoder->sample_fmt) << '\n';
 
 	if (different_formats)
 	{
 		rs_frame_opt.emplace(); // create empty frame
 		auto rs_frame = rs_frame_opt->get();
-		rs_frame->format = cdctx->request_sample_fmt;
+		rs_frame->format = decoder->request_sample_fmt;
 		rs_frame->sample_rate = stream->codecpar->sample_rate;
 		rs_frame->ch_layout = stream->codecpar->ch_layout;
-		rs_opt.emplace(&cdctx->ch_layout, cdctx->request_sample_fmt, cdctx->sample_rate, // output params
-					   &cdctx->ch_layout, cdctx->sample_fmt, cdctx->sample_rate);		 // input params
-		std::cout << "resampling to: " << av_get_sample_fmt_name(cdctx->request_sample_fmt) << '\n';
+		rs_opt.emplace(&decoder->ch_layout, decoder->request_sample_fmt, decoder->sample_rate, // output params
+					   &decoder->ch_layout, decoder->sample_fmt, decoder->sample_rate);		 // input params
+		std::cout << "resampling to: " << av_get_sample_fmt_name(decoder->request_sample_fmt) << '\n';
 	}
 
 	pa::PortAudio _;
 	pa::Stream pa_stream(0, cdpar->ch_layout.nb_channels,
-						 avsf2pasf(cdctx->request_sample_fmt),
+						 avsf2pasf(decoder->request_sample_fmt),
 						 cdpar->sample_rate,
 						 paFramesPerBufferUnspecified);
+	
+	std::cout << "pasf: " << avsf2pasf(decoder->sample_fmt) << '\n';
 
 	while (const auto packet = format.read_packet())
 	{
@@ -59,7 +59,7 @@ void with_resampling(const char *const url)
 			break;
 		while (auto frame = decoder.receive_frame())
 		{
-			assert(cdctx->sample_fmt == frame->format);
+			assert(decoder->sample_fmt == frame->format);
 			if (different_formats)
 			{
 				const auto rs_frame = rs_frame_opt->get();
@@ -80,28 +80,27 @@ void without_resampling(const char *const url)
 	const auto stream = format.find_best_stream(AVMEDIA_TYPE_AUDIO);
 	auto decoder = stream.create_decoder();
 
-	const auto cdctx = decoder.cdctx();
 	decoder.open();
 
 	pa::PortAudio _;
 	pa::Stream pa_stream(0, stream->codecpar->ch_layout.nb_channels,
-						 avsf2pasf(cdctx->sample_fmt),
+						 avsf2pasf(decoder->sample_fmt),
 						 stream->codecpar->sample_rate,
 						 paFramesPerBufferUnspecified);
 
-	std::cout << "codec: " << avcodec_get_name(decoder.codec->id) << '\n'
-			  << "sample format: " << av_get_sample_fmt_name(cdctx->sample_fmt) << '\n';
+	std::cout << "codec: " << avcodec_get_name(decoder->codec_id) << '\n'
+			  << "sample format: " << av_get_sample_fmt_name(decoder->sample_fmt) << '\n';
 
 	while (const auto packet = format.read_packet())
 	{
-		if (packet->stream_index != decoder.stream->index)
+		if (packet->stream_index != stream->index)
 			continue;
 		if (!decoder.send_packet(packet))
 			break;
 		while (const auto frame = decoder.receive_frame())
 		{
-			assert(cdctx->sample_fmt == frame->format);
-			pa_stream.write(is_interleaved(cdctx->sample_fmt)
+			assert(decoder->sample_fmt == frame->format);
+			pa_stream.write(is_interleaved(decoder->sample_fmt)
 								? (void *)frame->extended_data[0]
 								: (void *)frame->extended_data,
 							frame->nb_samples);
@@ -111,7 +110,6 @@ void without_resampling(const char *const url)
 
 int main(const int argc, const char *const *const argv)
 {
-	return shared_main(argc, argv, with_resampling<uint8_t, false>);
-	// with_resampling<uint8_t>(argv[1]);
-	// without_resampling(argv[1]);
+	// return shared_main(argc, argv, with_resampling<uint8_t, false>);
+	return shared_main(argc, argv, without_resampling);
 }

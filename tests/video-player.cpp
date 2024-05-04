@@ -1,5 +1,5 @@
-#include "include/av/MediaFileReader.hpp"
-#include "include/av/StreamDecoder.hpp"
+#include "include/av/MediaReader.hpp"
+#include "include/av/Decoder.hpp"
 #include "include/av/Scaler.hpp"
 
 #include "include/pa/PortAudio.hpp"
@@ -76,7 +76,7 @@ void play_video(const char *const url)
 			while (const auto frame = adecoder.receive_frame())
 				try
 				{
-					pa_stream.write(is_interleaved(adecoder.cdctx()->sample_fmt)
+					pa_stream.write(is_interleaved(adecoder->sample_fmt)
 										? (void *)frame->extended_data[0]
 										: (void *)frame->extended_data,
 									frame->nb_samples);

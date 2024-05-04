@@ -59,7 +59,7 @@ PaSampleFormat avsf2pasf(const AVSampleFormat av)
 		pa = paFloat32;
 		break;
 	default:
-		throw std::runtime_error("sample format not supported by portaudio: " + std::to_string(av));
+		throw std::invalid_argument(std::string{"sample format not supported by portaudio: "} + av_get_sample_fmt_name(av));
 	}
 
 	if (av >= 5)

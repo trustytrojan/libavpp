@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StreamDecoder.hpp"
+#include "Decoder.hpp"
 
 extern "C"
 {
@@ -21,14 +21,6 @@ namespace av
 
 	public:
 		Stream(const AVStream *const _s) : _s(_s) {}
-
-		/**
-		 * Dereference the contained `AVStream *`.
-		 * @return A const-reference to the contained `AVStream`.
-		 * @warning **Do not get the address of the returned reference in order to free/delete the pointer.**
-		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaFileReader`.
-		 */
-		const AVStream &operator*() const { return *_s; }
 
 		/**
 		 * Access fields the contained `AVStream`.
@@ -81,11 +73,11 @@ namespace av
 		}
 
 		/**
-		 * @return A `StreamDecoder` using this stream as its source.
+		 * @return A `Decoder` using this stream's codec.
 		 */
-		StreamDecoder create_decoder() const
+		Decoder create_decoder() const
 		{
-			return _s;
+			return avcodec_find_decoder(_s->codecpar->codec_id);
 		}
 	};
 }

@@ -1,5 +1,5 @@
-#include "include/av/MediaFileReader.hpp"
-#include "include/av/StreamDecoder.hpp"
+#include "include/av/MediaReader.hpp"
+#include "include/av/Decoder.hpp"
 #include "include/av/Scaler.hpp"
 
 #include "include/pa/PortAudio.hpp"
