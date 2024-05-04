@@ -45,12 +45,5 @@ namespace av
 			if (const auto rc = sws_scale_frame(_ctx, dst, src); rc < 0)
 				throw Error("sws_scale_frame", rc);
 		}
-
-		Frame scale_frame_alloc(const AVFrame *const src)
-		{
-			Frame dst;
-			scale_frame(dst.get(), src);
-			return dst;
-		}
 	};
 }

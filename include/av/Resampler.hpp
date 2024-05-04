@@ -35,10 +35,10 @@ namespace av
 			swr_free(&_ctx);
 		}
 
-		void convert(uint8_t **out, int out_count, const uint8_t **in, int in_count)
+		void convert_frame(AVFrame *const output, const AVFrame *const input)
 		{
-			if (const auto rc = swr_convert(_ctx, out, out_count, in, in_count); rc < 0)
-				throw Error("swr_convert", rc);
+			if (const auto rc = swr_convert_frame(_ctx, output, input); rc < 0)
+				throw Error("swr_convert_frame", rc);
 		}
 	};
 }

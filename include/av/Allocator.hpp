@@ -14,21 +14,13 @@ namespace av
 	class Allocator
 	{
 	public:
+		// necessary for stl
 		using value_type = _Tp;
-
-		Allocator() = default;
-
-		template <typename U>
-		Allocator(const Allocator<U> &) noexcept {}
 
 		_Tp *allocate(std::size_t n)
 		{
-			if (n > std::size_t(-1) / sizeof(_Tp))
-				throw std::bad_alloc();
-
 			if (const auto p = static_cast<_Tp *>(av_malloc(n * sizeof(_Tp))))
 				return p;
-
 			throw std::bad_alloc();
 		}
 

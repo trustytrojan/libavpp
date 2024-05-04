@@ -9,23 +9,37 @@ extern "C"
 
 namespace av
 {
-	// Non-owning wrapper class over an `AVStream`.
+	/**
+	 * Non-owning wrapper class over an `AVStream`.
+	 * @warning When using `operator->`, **do not free/delete the returned pointer.**
+	 * It belongs to an `AVFormatContext`, which is wrapped by `MediaFileReader`.
+	 */
 	class Stream
 	{
-		// non-const so that `Stream` is copyable
+		// the pointer must be non-const to keep the class copyable
 		const AVStream *_s;
 
 	public:
 		Stream(const AVStream *const _s) : _s(_s) {}
 
 		/**
-		 * @brief Access the internal `AVStream`.
-		 * @return A read-only pointer to the internal `AVStream`.
+		 * Dereference the contained `AVStream *`.
+		 * @return A const-reference to the contained `AVStream`.
+		 * @warning **Do not get the address of the returned reference in order to free/delete the pointer.**
+		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaFileReader`.
+		 */
+		const AVStream &operator*() const { return *_s; }
+
+		/**
+		 * Access fields the contained `AVStream`.
+		 * @return A read-only pointer to the contained `AVStream`.
+		 * @warning **Do not free/delete the returned pointer.**
+		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaFileReader`.
 		 */
 		const AVStream *operator->() const { return _s; }
 
 		/**
-		 * Wrapper over `av_dict_get(_s->metadata, ...)`.
+		 * Wrapper over `av_dict_get` using the contained `AVStream`'s `metadata` field.
 		 * @returns The value associated with `key` in stream `i`, or `NULL` if no entry exists for `key`.
 		 */
 		const char *metadata(const char *const key, const AVDictionaryEntry *prev = NULL, const int flags = 0) const
@@ -43,7 +57,7 @@ namespace av
 		}
 
 		/**
-		 * @return The total number of samples (per channel) in this stream.
+		 * @return The total number of audio samples (per channel) in this stream.
 		 */
 		int samples() const
 		{
@@ -51,7 +65,7 @@ namespace av
 		}
 
 		/**
-		 * @return The number of channels in this stream.
+		 * @return The number of audio channels in this stream.
 		 */
 		int nb_channels() const
 		{
@@ -59,13 +73,16 @@ namespace av
 		}
 
 		/**
-		 * @return The sample rate of this stream.
+		 * @return The audio sample rate of this stream.
 		 */
 		int sample_rate() const
 		{
 			return _s->codecpar->sample_rate;
 		}
 
+		/**
+		 * @return A `StreamDecoder` using this stream as its source.
+		 */
 		StreamDecoder create_decoder() const
 		{
 			return _s;

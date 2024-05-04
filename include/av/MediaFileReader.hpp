@@ -43,6 +43,8 @@ namespace av
 		/**
 		 * @brief Access fields of the internal `AVFormatContext`.
 		 * @return A read-only pointer to the internal `AVFormatContext`.
+		 * @warning **Do not free/delete the returned pointer.**
+		 * It belongs to and is managed by this class.
 		 */
 		const AVFormatContext *operator->() const { return _fmtctx; }
 
@@ -81,10 +83,11 @@ namespace av
 		 * @brief Read a packet of data from the media source.
 		 *
 		 * @return A pointer to the internal `AVPacket`, or `NULL` if end-of-file has been reached.
-		 * **Do not free the returned pointer.**
+		 * 
+		 * @warning **Do not free/delete the returned pointer.** It belongs to and is managed by this class.
 		 *
 		 * @note Each packet read from the source belongs to a stream.
-		 * If you are decoding a stream, make sure to check the `stream_index` field of a packet
+		 * If you are decoding a stream, make sure to check the `stream_index` field of the `AVPacket`
 		 * to make sure you are giving the right packet to the right decoder.
 		 */
 		const AVPacket *read_packet()

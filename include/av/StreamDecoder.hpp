@@ -92,6 +92,7 @@ namespace av
 		 * or `NULL` if the codec requires a new packet or has been fully flushed
 		 * @throws `std::runtime_error` if the codec context is not open
 		 * @throws `av::Error` if any `avcodec_*` functions fail
+		 * @warning **Do not free the returned pointer.** It belongs to and is managed by this class.
 		 */
 		const AVFrame *receive_frame()
 		{

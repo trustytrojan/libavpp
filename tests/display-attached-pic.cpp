@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <ranges>
+#include "util.hpp"
 
 void display_attached_pic(const char *const url)
 {
@@ -34,30 +35,13 @@ void display_attached_pic(const char *const url)
 	{
 		window.draw(sprite);
 		window.display();
-		{ // handle events
-			sf::Event event;
-			while (window.pollEvent(event))
-				if (event.is<sf::Event::Closed>())
-					window.close();
-		}
+		while (const auto event = window.pollEvent())
+			if (event.is<sf::Event::Closed>())
+				window.close();
 	}
 }
 
 int main(const int argc, const char *const *const argv)
 {
-	if (argc < 2 || !argv[1] || !*argv[1])
-	{
-		std::cerr << "media url required\n";
-		return EXIT_FAILURE;
-	}
-
-	try
-	{
-		display_attached_pic(argv[1]);
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << e.what() << '\n';
-		return EXIT_FAILURE;
-	}
+	return shared_main(argc, argv, display_attached_pic);
 }
