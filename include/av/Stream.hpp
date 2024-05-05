@@ -9,11 +9,7 @@ extern "C"
 
 namespace av
 {
-	/**
-	 * Non-owning wrapper class over an `AVStream`.
-	 * @warning When using `operator->`, **do not free/delete the returned pointer.**
-	 * It belongs to an `AVFormatContext`, which is wrapped by `MediaFileReader`.
-	 */
+	// Non-owning wrapper class over an `AVStream`.
 	class Stream
 	{
 		// the pointer must be non-const to keep the class copyable
@@ -26,7 +22,7 @@ namespace av
 		 * Access fields the contained `AVStream`.
 		 * @return A read-only pointer to the contained `AVStream`.
 		 * @warning **Do not free/delete the returned pointer.**
-		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaFileReader`.
+		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaReader`.
 		 */
 		const AVStream *operator->() const { return _s; }
 

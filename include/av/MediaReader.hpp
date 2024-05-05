@@ -13,7 +13,7 @@ extern "C"
 
 namespace av
 {
-	// Wrapper class over an `AVFormatContext`, specialized for reading media sources.
+	// Wrapper class over an `AVFormatContext`, specialized for reading.
 	class MediaReader
 	{
 		AVFormatContext *_fmtctx = nullptr;
@@ -67,12 +67,33 @@ namespace av
 
 		/**
 		 * Wrapper over `av_find_best_stream(fmtctx, ...)`.
+		 * @retval On success: the index highest quality stream of media type `type` in `_fmtctx->streams`
+		 * @retval `AVERROR_STREAM_NOT_FOUND` if no stream with the requested type could be found
+		 * @retval `AVERROR_DECODER_NOT_FOUND` if streams were found but no decoder
+		 */
+		int find_best_stream_idx(
+			const AVMediaType type,
+			int wanted_stream_nb = -1,
+			int related_stream = -1,
+			const AVCodec **decoder_ret = NULL,
+			int flags = 0) const
+		{
+			return av_find_best_stream(_fmtctx, type, wanted_stream_nb, related_stream, decoder_ret, flags);
+		}
+
+		/**
+		 * Wrapper over `av_find_best_stream(fmtctx, ...)`.
 		 * @returns The highest quality stream of media type `type`.
 		 * @throws `av::Error` if `av_find_best_stream` fails
 		 */
-		Stream find_best_stream(const AVMediaType type, int wanted_stream_nb = -1, int related_stream = -1, const AVCodec **decoder_ret = NULL, int flags = 0) const
+		Stream find_best_stream(
+			const AVMediaType type,
+			int wanted_stream_nb = -1,
+			int related_stream = -1,
+			const AVCodec **decoder_ret = NULL,
+			int flags = 0) const
 		{
-			const auto idx = av_find_best_stream(_fmtctx, type, wanted_stream_nb, related_stream, decoder_ret, flags);
+			const auto idx = find_best_stream_idx(type, wanted_stream_nb, related_stream, decoder_ret, flags);
 			if (idx < 0)
 				throw Error("av_find_best_stream", idx);
 			return _fmtctx->streams[idx];
@@ -82,7 +103,7 @@ namespace av
 		 * @brief Read a packet of data from the media source.
 		 *
 		 * @return A pointer to the internal `AVPacket`, or `NULL` if end-of-file has been reached.
-		 * 
+		 *
 		 * @warning **Do not free/delete the returned pointer.** It belongs to and is managed by this class.
 		 *
 		 * @note Each packet read from the source belongs to a stream.
