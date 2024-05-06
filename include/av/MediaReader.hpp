@@ -75,9 +75,7 @@ namespace av
 		/**
 		 * Wrapper over `av_find_best_stream(fmtctx, ...)`.
 		 * @returns The highest quality stream of media type `type`.
-		 * @throws `av::Error` containing one of the following `errnum` values if `av_find_best_stream` fails:
-		 * `AVERROR_STREAM_NOT_FOUND` if no stream with the requested type could be found;
-		 * `AVERROR_DECODER_NOT_FOUND` if streams were found but no decoder
+		 * @throws `av::Error` containing an `errnum` of `AVERROR_STREAM_NOT_FOUND` or `AVERROR_DECODER_NOT_FOUND`
 		 */
 		Stream find_best_stream(
 			const AVMediaType type,
