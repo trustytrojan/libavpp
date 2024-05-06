@@ -5,3 +5,4 @@
 #include "av/MediaWriter.hpp"
 #include "av/Resampler.hpp"
 #include "av/Scaler.hpp"
+#include "av/Util.hpp"

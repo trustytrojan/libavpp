@@ -1,15 +1,11 @@
 #include <iostream>
 #include <optional>
 #include <cassert>
-
-#include "include/av/MediaReader.hpp"
-#include "include/av/Resampler.hpp"
-#include "include/av/Frame.hpp"
-
-#include "include/pa/PortAudio.hpp"
-#include "include/pa/Stream.hpp"
-
+#include <av.hpp>
+#include "../../portaudio-pp/portaudio.hpp"
 #include "util.hpp"
+
+#include "../src/av/Util.cpp"
 
 template <typename SampleFormat, bool planar = true>
 void with_resampling(const char *const url)
@@ -22,10 +18,10 @@ void with_resampling(const char *const url)
 	std::optional<av::Frame> rs_frame_opt;
 	std::optional<av::Resampler> rs_opt;
 
-	decoder->request_sample_fmt = avsf_from_type<SampleFormat, planar>();
+	decoder->request_sample_fmt = av::smpfmt_from_type<SampleFormat, planar>();
 	decoder.open();
 
-	const auto interleaved = is_interleaved(decoder->sample_fmt);
+	const auto interleaved = av::is_interleaved(decoder->sample_fmt);
 	const auto different_formats = (decoder->sample_fmt != decoder->request_sample_fmt);
 
 	std::cout << "requested sample format: " << av_get_sample_fmt_name(decoder->request_sample_fmt)
@@ -100,7 +96,7 @@ void without_resampling(const char *const url)
 		while (const auto frame = decoder.receive_frame())
 		{
 			assert(decoder->sample_fmt == frame->format);
-			pa_stream.write(is_interleaved(decoder->sample_fmt)
+			pa_stream.write(av::is_interleaved(decoder->sample_fmt)
 								? (void *)frame->extended_data[0]
 								: (void *)frame->extended_data,
 							frame->nb_samples);

@@ -1,6 +1,6 @@
 CC = g++
 WFLAGS = -Wall -Wextra -Wno-narrowing
-IFLAGS = -I.
+IFLAGS = -Iinclude
 CFLAGS = $(WFLAGS) $(IFLAGS) -g -std=gnu++23
 AV_LIBS = -lavformat -lavcodec -lavutil -lswscale -lswresample
 SFML_LIBS = -lsfml-window -lsfml-system -lsfml-graphics -lsfml-audio

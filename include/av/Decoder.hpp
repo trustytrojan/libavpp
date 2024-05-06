@@ -1,11 +1,7 @@
 #pragma once
 
-#include <functional>
-#include "Error.hpp"
-
 extern "C"
 {
-#include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 }
 
@@ -13,11 +9,8 @@ namespace av
 {
 	class Decoder
 	{
-		using FrameCallback = std::function<void(const AVFrame *)>;
-
-	private:
 		AVCodecContext *_cdctx = nullptr;
-		AVFrame *frame = av_frame_alloc();
+		AVFrame *_frm = nullptr;
 
 	public:
 		/**
@@ -30,16 +23,19 @@ namespace av
 			if (!codec)
 				throw std::invalid_argument("codec is null");
 			if (!(_cdctx = avcodec_alloc_context3(codec)))
-				throw std::runtime_error("failed to allocate codec context");
-			if (!frame)
-				throw std::runtime_error("failed to allocate frame");
+				throw std::runtime_error("avcodec_alloc_context3() failed");
 		}
 
 		~Decoder()
 		{
-			av_frame_free(&frame);
+			av_frame_free(&_frm);
 			avcodec_free_context(&_cdctx);
 		}
+
+		Decoder(const Decoder&) = delete;
+		Decoder& operator=(const Decoder&) = delete;
+		Decoder(Decoder&&) = delete;
+		Decoder& operator=(Decoder&&) = delete;
 
 		/**
 		 * Access the internal `AVCodecContext`.
@@ -77,10 +73,6 @@ namespace av
 		 */
 		bool send_packet(const AVPacket *const pkt)
 		{
-			if (!pkt)
-				throw std::invalid_argument("pkt is null");
-			if (!avcodec_is_open(_cdctx))
-				throw std::runtime_error("codec context is not open!");
 			switch (const auto rc = avcodec_send_packet(_cdctx, pkt))
 			{
 			case 0:
@@ -105,12 +97,12 @@ namespace av
 		 */
 		const AVFrame *receive_frame()
 		{
-			if (!avcodec_is_open(_cdctx))
-				throw std::runtime_error("codec context is not open!");
-			switch (const auto rc = avcodec_receive_frame(_cdctx, frame))
+			if (!_frm && !(_frm = av_frame_alloc()))
+				throw std::runtime_error("av_frame_alloc() failed");
+			switch (const auto rc = avcodec_receive_frame(_cdctx, _frm))
 			{
 			case 0:
-				return frame;
+				return _frm;
 			case AVERROR(EAGAIN):
 			case AVERROR_EOF:
 				return NULL;

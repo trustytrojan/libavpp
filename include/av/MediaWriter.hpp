@@ -23,6 +23,7 @@ namespace av
 		{
 			if (const auto rc = avformat_alloc_output_context2(&_fmtctx, oformat, NULL, url); rc < 0)
 				throw Error("avformat_alloc_output_context2", rc);
+			// no need to call `avformat_init_output`, since `avformat_write_header` does the same thing AND writes the stream header
 		}
 
 		~MediaWriter()
@@ -49,6 +50,12 @@ namespace av
 			if (rc < 0)
 				throw Error("avformat_write_header", rc);
 			return rc;
+		}
+
+		void write_packet(AVPacket *const pkt)
+		{
+			if (const auto rc = av_interleaved_write_frame(_fmtctx, pkt); rc < 0)
+				throw Error("av_interleaved_write_frame", rc);
 		}
 	};
 }

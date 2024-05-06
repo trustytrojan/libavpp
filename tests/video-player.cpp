@@ -1,13 +1,8 @@
-#include "include/av/MediaReader.hpp"
-#include "include/av/Decoder.hpp"
-#include "include/av/Scaler.hpp"
-
-#include "include/pa/PortAudio.hpp"
-#include "include/pa/Stream.hpp"
-
+#include "../../portaudio-pp/portaudio.hpp"
+#include <av.hpp>
 #include "util.hpp"
-
 #include <SFML/Graphics.hpp>
+#include "../src/av/Util.cpp"
 
 void play_video(const char *const url)
 {
@@ -29,17 +24,9 @@ void play_video(const char *const url)
 						 astream->codecpar->sample_rate,
 						 paFramesPerBufferUnspecified);
 
-	auto width = vstream->codecpar->width;
-	const auto height = vstream->codecpar->height;
-
 	// libswscale stride issue: if width is not divisible by 8, output will be distorted
-	const auto rem8 = width % 8;
-
-	// move width towards the nearest multiple of 8
-	if (rem8 < 4)
-		width -= rem8;
-	else
-		width += 8 - rem8;
+	const auto width = av::nearest_multiple_8(vstream->codecpar->width);
+	const auto height = vstream->codecpar->height;
 
 	// create scaler to convert from yuv420p to rgba
 	av::Scaler scaler(width, height, (AVPixelFormat)vstream->codecpar->format,
@@ -76,7 +63,7 @@ void play_video(const char *const url)
 			while (const auto frame = adecoder.receive_frame())
 				try
 				{
-					pa_stream.write(is_interleaved(adecoder->sample_fmt)
+					pa_stream.write(av::is_interleaved(adecoder->sample_fmt)
 										? (void *)frame->extended_data[0]
 										: (void *)frame->extended_data,
 									frame->nb_samples);

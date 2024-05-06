@@ -27,15 +27,6 @@ int shared_main(const int argc, const char *const *const argv, void (*func)(cons
 	return EXIT_SUCCESS;
 }
 
-bool is_interleaved(const AVSampleFormat sample_fmt)
-{
-	if (sample_fmt >= 0 && sample_fmt <= 4)
-		return true;
-	if (sample_fmt >= 5 && sample_fmt <= 11)
-		return false;
-	throw std::runtime_error("is_interleaved: invalid sample format!");
-}
-
 PaSampleFormat avsf2pasf(const AVSampleFormat av)
 {
 	PaSampleFormat pa;
@@ -68,31 +59,3 @@ PaSampleFormat avsf2pasf(const AVSampleFormat av)
 	return pa;
 }
 
-template <typename T, bool planar>
-constexpr AVSampleFormat avsf_from_type()
-{
-	int avsf;
-
-	if (std::is_same_v<T, uint8_t>)
-		avsf = AV_SAMPLE_FMT_U8;
-	else if (std::is_same_v<T, int16_t>)
-		avsf = AV_SAMPLE_FMT_S16;
-	else if (std::is_same_v<T, int32_t>)
-		avsf = AV_SAMPLE_FMT_S32;
-	else if (std::is_same_v<T, float>)
-		avsf = AV_SAMPLE_FMT_FLT;
-	else if (std::is_same_v<T, int64_t>)
-		avsf = AV_SAMPLE_FMT_S64;
-	else
-		return AV_SAMPLE_FMT_NONE;
-
-	if (planar)
-	{
-		if (std::is_same_v<T, int64_t>)
-			avsf = AV_SAMPLE_FMT_S64P;
-		else
-			avsf += 5;
-	}
-
-	return (AVSampleFormat)avsf;
-}

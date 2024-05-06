@@ -19,6 +19,13 @@ namespace av
 		Stream(const AVStream *const _s) : _s(_s) {}
 
 		/**
+		 * @return A read-only pointer to the contained `AVStream`.
+		 * @warning **Do not free/delete the returned pointer.**
+		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaReader`.
+		 */
+		const AVStream *get() const { return _s; }
+
+		/**
 		 * Access fields the contained `AVStream`.
 		 * @return A read-only pointer to the contained `AVStream`.
 		 * @warning **Do not free/delete the returned pointer.**

@@ -21,6 +21,11 @@ namespace av
 		std::vector<Stream> _streams;
 
 	public:
+		/**
+		 * The streams contained in this media source.
+		 */
+		const std::vector<Stream> &streams = _streams;
+
 		MediaReader(const char *const url)
 		{
 			if (const auto rc = avformat_open_input(&_fmtctx, url, NULL, NULL); rc < 0)
@@ -38,6 +43,16 @@ namespace av
 			av_packet_free(&_pkt);
 			avformat_close_input(&_fmtctx);
 		}
+
+		MediaReader(const MediaReader&) = delete;
+		MediaReader& operator=(const MediaReader&) = delete;
+		MediaReader(MediaReader&&) = delete;
+		MediaReader& operator=(MediaReader&&) = delete;
+
+		/**
+		 * @return A read-only pointer to the internal `AVFormatContext`.
+		 */
+		const AVFormatContext *get() const { return _fmtctx; }
 
 		/**
 		 * @brief Access fields of the internal `AVFormatContext`.
@@ -58,33 +73,11 @@ namespace av
 		}
 
 		/**
-		 * @return The streams contained in this media source.
-		 */
-		const std::vector<Stream> &streams() const
-		{
-			return _streams;
-		}
-
-		/**
-		 * Wrapper over `av_find_best_stream(fmtctx, ...)`.
-		 * @retval On success: the index highest quality stream of media type `type` in `_fmtctx->streams`
-		 * @retval `AVERROR_STREAM_NOT_FOUND` if no stream with the requested type could be found
-		 * @retval `AVERROR_DECODER_NOT_FOUND` if streams were found but no decoder
-		 */
-		int find_best_stream_idx(
-			const AVMediaType type,
-			int wanted_stream_nb = -1,
-			int related_stream = -1,
-			const AVCodec **decoder_ret = NULL,
-			int flags = 0) const
-		{
-			return av_find_best_stream(_fmtctx, type, wanted_stream_nb, related_stream, decoder_ret, flags);
-		}
-
-		/**
 		 * Wrapper over `av_find_best_stream(fmtctx, ...)`.
 		 * @returns The highest quality stream of media type `type`.
-		 * @throws `av::Error` if `av_find_best_stream` fails
+		 * @throws `av::Error` containing one of the following `errnum` values if `av_find_best_stream` fails:
+		 * `AVERROR_STREAM_NOT_FOUND` if no stream with the requested type could be found;
+		 * `AVERROR_DECODER_NOT_FOUND` if streams were found but no decoder
 		 */
 		Stream find_best_stream(
 			const AVMediaType type,
@@ -93,10 +86,24 @@ namespace av
 			const AVCodec **decoder_ret = NULL,
 			int flags = 0) const
 		{
-			const auto idx = find_best_stream_idx(type, wanted_stream_nb, related_stream, decoder_ret, flags);
+			const auto idx = av_find_best_stream(_fmtctx, type, wanted_stream_nb, related_stream, decoder_ret, flags);
 			if (idx < 0)
 				throw Error("av_find_best_stream", idx);
 			return _fmtctx->streams[idx];
+		}
+
+		// Wrapper over `av_seek_frame`.
+		void seek_frame(int stream_index, int64_t timestamp, int flags)
+		{
+			if (const auto rc = av_seek_frame(_fmtctx, stream_index, timestamp, flags); rc < 0)
+				throw Error("av_seek_frame", rc);
+		}
+
+		// Wrapper over `avformat_seek_file`. Recommended over `seek_frame`.
+		void seek_file(int stream_index, int64_t min_ts, int64_t ts, int64_t max_ts, int flags)
+		{
+			if (const auto rc = avformat_seek_file(_fmtctx, stream_index, min_ts, ts, max_ts, flags); rc < 0)
+				throw Error("avformat_seek_file", rc);
 		}
 
 		/**
