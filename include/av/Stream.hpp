@@ -13,10 +13,17 @@ namespace av
 	class Stream
 	{
 		// the pointer must be non-const to keep the class copyable
-		const AVStream *_s;
+		AVStream *_s;
 
 	public:
-		Stream(const AVStream *const _s) : _s(_s) {}
+		Stream(AVStream *const _s) : _s(_s) {}
+
+		/**
+		 * @return A pointer to the contained `AVStream`.
+		 * @warning **Do not free/delete the returned pointer.**
+		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaReader`.
+		 */
+		AVStream *get() { return _s; }
 
 		/**
 		 * @return A read-only pointer to the contained `AVStream`.
@@ -24,6 +31,14 @@ namespace av
 		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaReader`.
 		 */
 		const AVStream *get() const { return _s; }
+
+		/**
+		 * Access fields the contained `AVStream`.
+		 * @return A pointer to the contained `AVStream`.
+		 * @warning **Do not free/delete the returned pointer.**
+		 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by `MediaReader`.
+		 */
+		AVStream *operator->() { return _s; }
 
 		/**
 		 * Access fields the contained `AVStream`.
@@ -77,10 +92,20 @@ namespace av
 
 		/**
 		 * @return A `Decoder` using this stream's codec.
+		 * @note Codec parameters are not copied to the context.
 		 */
 		Decoder create_decoder() const
 		{
 			return avcodec_find_decoder(_s->codecpar->codec_id);
+		}
+
+		/**
+		 * @return An `Encoder` using this stream's codec.
+		 * @note Codec parameters are not copied to the context.
+		 */
+		Encoder create_encoder() const
+		{
+			return avcodec_find_encoder(_s->codecpar->codec_id);
 		}
 	};
 }

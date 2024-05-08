@@ -1,4 +1,5 @@
 #include "../include/av/Util.hpp"
+#include "../include/av/Error.hpp"
 
 void av::frame_free(AVFrame *_f)
 {
@@ -14,6 +15,18 @@ int av::nearest_multiple_8(const int x)
 		return x - rem8;
 	else
 		return x + 8 - rem8;
+}
+
+void av::ch_layout_copy(AVChannelLayout *dst, const AVChannelLayout *src)
+{
+	if (const auto rc = av_channel_layout_copy(dst, src); rc < 0)
+		throw Error("av_channel_layout_copy", rc);
+}
+
+void av::cdpar_from_cdctx(AVCodecParameters *par, const AVCodecContext *codec)
+{
+	if (const auto rc = avcodec_parameters_from_context(par, codec); rc < 0)
+		throw Error("avcodec_parameters_from_context", rc);
 }
 
 bool av::is_interleaved(const AVSampleFormat sample_fmt)

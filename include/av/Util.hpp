@@ -4,8 +4,8 @@
 
 extern "C"
 {
-#include <libavutil/samplefmt.h>
-#include <libavutil/frame.h>
+#include <libavutil/avutil.h>
+#include <libavcodec/avcodec.h>
 }
 
 namespace av
@@ -15,6 +15,9 @@ namespace av
 
 	// used to solve the swscale stride issue
 	int nearest_multiple_8(const int x);
+
+	void ch_layout_copy(AVChannelLayout *dst, const AVChannelLayout *src);
+	void cdpar_from_cdctx(AVCodecParameters *par, const AVCodecContext *codec);
 
 	/**
 	 * @returns Whether `sample_fmt` is an interleaved/non-planar sample format.

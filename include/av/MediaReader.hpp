@@ -5,6 +5,7 @@
 
 #include "Error.hpp"
 #include "Stream.hpp"
+#include "FormatContext.hpp"
 
 extern "C"
 {
@@ -13,19 +14,12 @@ extern "C"
 
 namespace av
 {
-	// Wrapper class over an `AVFormatContext`, specialized for reading.
-	class MediaReader
+	class MediaReader : FormatContext
 	{
-		AVFormatContext *_fmtctx = nullptr;
 		AVPacket *_pkt = nullptr;
 		std::vector<Stream> _streams;
 
 	public:
-		/**
-		 * The streams contained in this media source.
-		 */
-		const std::vector<Stream> &streams = _streams;
-
 		MediaReader(const char *const url)
 		{
 			if (const auto rc = avformat_open_input(&_fmtctx, url, NULL, NULL); rc < 0)
@@ -41,26 +35,17 @@ namespace av
 		~MediaReader()
 		{
 			av_packet_free(&_pkt);
-			avformat_close_input(&_fmtctx);
 		}
 
-		MediaReader(const MediaReader&) = delete;
-		MediaReader& operator=(const MediaReader&) = delete;
-		MediaReader(MediaReader&&) = delete;
-		MediaReader& operator=(MediaReader&&) = delete;
+		void print_info(int index)
+		{
+			av_dump_format(_fmtctx, index, _fmtctx->url, 0);
+		}
 
 		/**
-		 * @return A read-only pointer to the internal `AVFormatContext`.
+		 * @returns The streams contained in this media source.
 		 */
-		const AVFormatContext *get() const { return _fmtctx; }
-
-		/**
-		 * @brief Access fields of the internal `AVFormatContext`.
-		 * @return A read-only pointer to the internal `AVFormatContext`.
-		 * @warning **Do not free/delete the returned pointer.**
-		 * It belongs to and is managed by this class.
-		 */
-		const AVFormatContext *operator->() const { return _fmtctx; }
+		const std::vector<Stream> &streams() const { return _streams; }
 
 		/**
 		 * Wrapper over `av_dict_get(fmtctx->metadata, ...)`.

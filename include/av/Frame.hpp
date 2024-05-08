@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "Util.hpp"
+#include "Error.hpp"
 
 extern "C"
 {
@@ -23,7 +24,10 @@ namespace av
 				throw std::runtime_error("av_frame_alloc() failed");
 		}
 
-		Frame(Frame &&) = delete;
-		Frame &operator=(Frame &&) = delete;
+		void get_buffer()
+		{
+			if (const auto rc = av_frame_get_buffer(get(), 0); rc < 0)
+				throw Error("av_frame_get_buffer", rc);
+		}
 	};
 }
