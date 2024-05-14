@@ -17,7 +17,8 @@ namespace av
 	int nearest_multiple_8(const int x);
 
 	void ch_layout_copy(AVChannelLayout *dst, const AVChannelLayout *src);
-	void cdpar_from_cdctx(AVCodecParameters *par, const AVCodecContext *codec);
+	void parameters_from_context(AVCodecParameters *par, const AVCodecContext *ctx);
+	void parameters_to_context(AVCodecContext *ctx, const AVCodecParameters *par);
 
 	/**
 	 * @returns Whether `sample_fmt` is an interleaved/non-planar sample format.
