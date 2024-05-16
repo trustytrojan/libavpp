@@ -1,7 +1,9 @@
-#include "../../portaudio-pp/portaudio.hpp"
-#include <av.hpp>
 #include "util.hpp"
 #include <SFML/Graphics.hpp>
+#include <av.hpp>
+#include <portaudio.hpp>
+
+// force to include this until i make libavpp a compiled library
 #include "../src/av/Util.cpp"
 
 void play_video(const char *const url)

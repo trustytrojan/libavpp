@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdexcept>
-
 extern "C"
 {
 #include <libavutil/avutil.h>

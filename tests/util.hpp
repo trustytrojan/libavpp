@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdlib>
+
 extern "C"
 {
 #include <libavutil/samplefmt.h>
@@ -58,4 +60,3 @@ PaSampleFormat avsf2pasf(const AVSampleFormat av)
 
 	return pa;
 }
-

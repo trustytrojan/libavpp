@@ -1,8 +1,8 @@
 #pragma once
 
-#include <memory>
-#include "Util.hpp"
 #include "Error.hpp"
+#include "Util.hpp"
+#include <memory>
 
 extern "C"
 {
@@ -11,23 +11,25 @@ extern "C"
 
 namespace av
 {
-	// Extension of `std::unique_ptr<AVFrame, ...>`.
-	// Eases usage of `av::Scaler` and `av::Resampler`.
-	struct Frame : std::unique_ptr<AVFrame, decltype(&frame_free)>
+
+// Extension of `std::unique_ptr<AVFrame, ...>`.
+// Eases usage of `av::Scaler` and `av::Resampler`.
+struct Frame : std::unique_ptr<AVFrame, decltype(&frame_free)>
+{
+	Frame(AVFrame *const _f)
+		: std::unique_ptr<AVFrame, decltype(&frame_free)>(_f, frame_free) {}
+
+	Frame() : Frame(av_frame_alloc())
 	{
-		Frame(AVFrame *const _f)
-			: std::unique_ptr<AVFrame, decltype(&frame_free)>(_f, frame_free) {}
+		if (!get())
+			throw std::runtime_error("av_frame_alloc() failed");
+	}
 
-		Frame() : Frame(av_frame_alloc())
-		{
-			if (!get())
-				throw std::runtime_error("av_frame_alloc() failed");
-		}
+	void get_buffer()
+	{
+		if (const auto rc = av_frame_get_buffer(get(), 0); rc < 0)
+			throw Error("av_frame_get_buffer", rc);
+	}
+};
 
-		void get_buffer()
-		{
-			if (const auto rc = av_frame_get_buffer(get(), 0); rc < 0)
-				throw Error("av_frame_get_buffer", rc);
-		}
-	};
-}
+} // namespace av

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Decoder.hpp"
+#include "Encoder.hpp"
 
 extern "C"
 {

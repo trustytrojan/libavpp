@@ -1,9 +1,9 @@
+#include "util.hpp"
+#include <av.hpp>
+#include <cassert>
 #include <iostream>
 #include <optional>
-#include <cassert>
-#include <av.hpp>
-#include "../../portaudio-pp/portaudio.hpp"
-#include "util.hpp"
+#include <portaudio.hpp>
 
 #include "../src/av/Util.cpp"
 
@@ -35,7 +35,7 @@ void with_resampling(const char *const url)
 		rs_frame->sample_rate = stream->codecpar->sample_rate;
 		rs_frame->ch_layout = stream->codecpar->ch_layout;
 		rs_opt.emplace(&decoder->ch_layout, decoder->request_sample_fmt, decoder->sample_rate, // output params
-					   &decoder->ch_layout, decoder->sample_fmt, decoder->sample_rate);		 // input params
+					   &decoder->ch_layout, decoder->sample_fmt, decoder->sample_rate);		   // input params
 		std::cout << "resampling to: " << av_get_sample_fmt_name(decoder->request_sample_fmt) << '\n';
 	}
 
@@ -44,7 +44,7 @@ void with_resampling(const char *const url)
 						 avsf2pasf(decoder->request_sample_fmt),
 						 cdpar->sample_rate,
 						 paFramesPerBufferUnspecified);
-	
+
 	std::cout << "pasf: " << avsf2pasf(decoder->sample_fmt) << '\n';
 
 	while (const auto packet = format.read_packet())

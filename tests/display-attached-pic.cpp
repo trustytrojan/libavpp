@@ -1,17 +1,17 @@
+#include "util.hpp"
 #include <SFML/Graphics.hpp>
 #include <av.hpp>
 #include <iostream>
 #include <ranges>
-#include "util.hpp"
 
 void display_attached_pic(const char *const url)
 {
 	av::MediaReader format(url);
 
 	// find attached pic stream
-	const auto itr = std::ranges::find_if(format.streams, [](const av::Stream &s)
+	const auto itr = std::ranges::find_if(format.streams(), [](const av::Stream &s)
 										  { return s->disposition & AV_DISPOSITION_ATTACHED_PIC; });
-	if (itr == format.streams.cend())
+	if (itr == format.streams().cend())
 		throw std::runtime_error("no attached pic found in media file!");
 	const auto &stream = *itr;
 

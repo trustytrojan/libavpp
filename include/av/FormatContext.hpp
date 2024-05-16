@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Error.hpp"
-
 extern "C"
 {
 #include <libavformat/avformat.h>
@@ -9,51 +7,66 @@ extern "C"
 
 namespace av
 {
-	class FormatContext
+
+class FormatContext
+{
+protected:
+	AVFormatContext *_fmtctx = nullptr;
+	FormatContext(){};
+
+public:
+	~FormatContext()
 	{
-	protected:
-		AVFormatContext *_fmtctx = nullptr;
-		FormatContext(){};
+		avformat_free_context(_fmtctx);
+	}
 
-	public:
-		~FormatContext()
-		{
-			avformat_free_context(_fmtctx);
-		}
+	FormatContext(const FormatContext &) = delete;
+	FormatContext &operator=(const FormatContext &) = delete;
 
-		FormatContext(const FormatContext &) = delete;
-		FormatContext &operator=(const FormatContext &) = delete;
-		FormatContext(FormatContext &&) = delete;
-		FormatContext &operator=(FormatContext &&) = delete;
+	FormatContext(FormatContext &&other)
+	{
+		_fmtctx = other._fmtctx;
+		other.~FormatContext();
+		other._fmtctx = nullptr;
+	}
 
-		/**
-		 * @return A pointer to the internal `AVFormatContext`.
-		 * @warning **Do not free/delete the returned pointer.**
-		 * It belongs to and is managed by this class.
-		 */
-		AVFormatContext *get() { return _fmtctx; }
+	FormatContext &operator=(FormatContext &&other)
+	{
+		_fmtctx = other._fmtctx;
+		other.~FormatContext();
+		other._fmtctx = nullptr;
+		return *this;
+	}
 
-		/**
-		 * @return A read-only pointer to the internal `AVFormatContext`.
-		 * @warning **Do not free/delete the returned pointer.**
-		 * It belongs to and is managed by this class.
-		 */
-		const AVFormatContext *get() const { return _fmtctx; }
+	/**
+	 * @return A pointer to the internal `AVFormatContext`.
+	 * @warning **Do not free/delete the returned pointer.**
+	 * It belongs to and is managed by this class.
+	 */
+	AVFormatContext *get() { return _fmtctx; }
 
-		/**
-		 * @brief Access fields of the internal `AVFormatContext`.
-		 * @return A pointer to the internal `AVFormatContext`.
-		 * @warning **Do not free/delete the returned pointer.**
-		 * It belongs to and is managed by this class.
-		 */
-		AVFormatContext *operator->() { return _fmtctx; }
+	/**
+	 * @return A read-only pointer to the internal `AVFormatContext`.
+	 * @warning **Do not free/delete the returned pointer.**
+	 * It belongs to and is managed by this class.
+	 */
+	const AVFormatContext *get() const { return _fmtctx; }
 
-		/**
-		 * @brief Access fields of the internal `AVFormatContext`.
-		 * @return A read-only pointer to the internal `AVFormatContext`.
-		 * @warning **Do not free/delete the returned pointer.**
-		 * It belongs to and is managed by this class.
-		 */
-		const AVFormatContext *operator->() const { return _fmtctx; }
-	};
-}
+	/**
+	 * @brief Access fields of the internal `AVFormatContext`.
+	 * @return A pointer to the internal `AVFormatContext`.
+	 * @warning **Do not free/delete the returned pointer.**
+	 * It belongs to and is managed by this class.
+	 */
+	AVFormatContext *operator->() { return _fmtctx; }
+
+	/**
+	 * @brief Access fields of the internal `AVFormatContext`.
+	 * @return A read-only pointer to the internal `AVFormatContext`.
+	 * @warning **Do not free/delete the returned pointer.**
+	 * It belongs to and is managed by this class.
+	 */
+	const AVFormatContext *operator->() const { return _fmtctx; }
+};
+
+} // namespace av
