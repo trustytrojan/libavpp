@@ -26,13 +26,15 @@ FetchContent_Declare(portaudio-pp
 	GIT_TAG main)
 FetchContent_MakeAvailable(portaudio-pp)
 
-add_executable(audio-player src/tests/audio-player.cpp)
-add_executable(display-attached-pic src/tests/display-attached-pic.cpp)
-add_executable(video-player src/tests/video-player.cpp)
+if (LIBAVPP_BUILD_TESTS)
+	add_executable(audio-player src/tests/audio-player.cpp)
+	add_executable(display-attached-pic src/tests/display-attached-pic.cpp)
+	add_executable(video-player src/tests/video-player.cpp)
 
-target_include_directories(audio-player PRIVATE ${portaudio-pp_SOURCE_DIR}/include)
-target_include_directories(video-player PRIVATE ${portaudio-pp_SOURCE_DIR}/include)
+	target_include_directories(audio-player PRIVATE ${portaudio-pp_SOURCE_DIR}/include)
+	target_include_directories(video-player PRIVATE ${portaudio-pp_SOURCE_DIR}/include)
 
-target_link_libraries(audio-player PRIVATE portaudio ${AV_LIBS})
-target_link_libraries(display-attached-pic PRIVATE sfml-graphics ${AV_LIBS})
-target_link_libraries(video-player PRIVATE sfml-graphics portaudio ${AV_LIBS})
+	target_link_libraries(audio-player PRIVATE portaudio ${AV_LIBS})
+	target_link_libraries(display-attached-pic PRIVATE sfml-graphics ${AV_LIBS})
+	target_link_libraries(video-player PRIVATE sfml-graphics portaudio ${AV_LIBS})
+endif()
