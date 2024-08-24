@@ -1,5 +1,5 @@
-bin
 *.out
 Music
-pa
 .vscode
+build
+.cache

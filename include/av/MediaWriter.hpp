@@ -2,6 +2,7 @@
 
 #include "Error.hpp"
 #include "FormatContext.hpp"
+#include "Stream.hpp"
 
 extern "C"
 {

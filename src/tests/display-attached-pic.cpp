@@ -1,35 +1,40 @@
-#include "util.hpp"
+#include "../../include/av/MediaReader.hpp"
+#include "util.cpp"
 #include <SFML/Graphics.hpp>
-#include <av.hpp>
-#include <iostream>
-#include <ranges>
 
 void display_attached_pic(const char *const url)
 {
 	av::MediaReader format(url);
 
+	const auto is_attached_pic = [](const av::Stream &s)
+	{
+		return s->disposition & AV_DISPOSITION_ATTACHED_PIC;
+	};
+
 	// find attached pic stream
-	const auto itr = std::ranges::find_if(format.streams(), [](const av::Stream &s)
-										  { return s->disposition & AV_DISPOSITION_ATTACHED_PIC; });
+	const auto itr = std::ranges::find_if(format.streams(), is_attached_pic);
 	if (itr == format.streams().cend())
 		throw std::runtime_error("no attached pic found in media file!");
 	const auto &stream = *itr;
 
 	// setup sfml window, load & draw texture
-	sf::RenderWindow window(sf::VideoMode({stream->codecpar->width, stream->codecpar->height}), "av-test2");
+	sf::RenderWindow window(
+		sf::VideoMode({
+			static_cast<unsigned int>(stream->codecpar->width),
+			static_cast<unsigned int>(stream->codecpar->height),
+		}),
+		"av-test2");
 	window.setVerticalSyncEnabled(true);
 
-	sf::Texture texture;
-	if (!texture.loadFromMemory(stream->attached_pic.data, stream->attached_pic.size))
-		return;
-	sf::Sprite sprite(texture);
+	sf::Texture texture{stream->attached_pic.data, static_cast<size_t>(stream->attached_pic.size)};
+	sf::Sprite sprite{texture};
 
 	while (window.isOpen())
 	{
 		window.draw(sprite);
 		window.display();
 		while (const auto event = window.pollEvent())
-			if (event.is<sf::Event::Closed>())
+			if (event->is<sf::Event::Closed>())
 				window.close();
 	}
 }

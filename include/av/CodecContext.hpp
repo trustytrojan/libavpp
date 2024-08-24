@@ -30,10 +30,7 @@ public:
 			throw std::runtime_error("avcodec_alloc_context3() failed");
 	}
 
-	~CodecContext()
-	{
-		avcodec_free_context(&_cdctx);
-	}
+	~CodecContext() { avcodec_free_context(&_cdctx); }
 
 	CodecContext(const CodecContext &) = delete;
 	CodecContext &operator=(const CodecContext &) = delete;
