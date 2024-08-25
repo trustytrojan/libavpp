@@ -12,28 +12,25 @@ class FormatContext
 {
 protected:
 	AVFormatContext *_fmtctx = nullptr;
-	FormatContext(){};
+	FormatContext() {};
 
 public:
-	~FormatContext()
-	{
-		avformat_free_context(_fmtctx);
-	}
+	~FormatContext() { avformat_free_context(_fmtctx); }
 
 	FormatContext(const FormatContext &) = delete;
 	FormatContext &operator=(const FormatContext &) = delete;
 
 	FormatContext(FormatContext &&other)
 	{
+		this->~FormatContext();
 		_fmtctx = other._fmtctx;
-		other.~FormatContext();
 		other._fmtctx = nullptr;
 	}
 
 	FormatContext &operator=(FormatContext &&other)
 	{
+		this->~FormatContext();
 		_fmtctx = other._fmtctx;
-		other.~FormatContext();
 		other._fmtctx = nullptr;
 		return *this;
 	}

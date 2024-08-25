@@ -28,8 +28,7 @@ void play_video(const char *const url)
 		0,
 		astream->codecpar->ch_layout.nb_channels,
 		avsf2pasf((AVSampleFormat)astream->codecpar->format),
-		astream->codecpar->sample_rate,
-		paFramesPerBufferUnspecified);
+		astream->codecpar->sample_rate);
 	pa_stream.start();
 
 	// libswscale stride issue: if width is not divisible by 8, output will be distorted
@@ -70,8 +69,13 @@ void play_video(const char *const url)
 			while (const auto frame = adecoder.receive_frame())
 				try
 				{
+					// clang-format off
 					pa_stream.write(
-						av::is_interleaved(adecoder->sample_fmt) ? (void *)frame->extended_data[0] : (void *)frame->extended_data, frame->nb_samples);
+						av::is_interleaved(adecoder->sample_fmt)
+							? (void *)frame->extended_data[0]
+							: (void *)frame->extended_data,
+						frame->nb_samples);
+					// clang-format on
 				}
 				catch (const pa::Error &e)
 				{

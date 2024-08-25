@@ -1,7 +1,7 @@
-#include <portaudio.hpp>
 #include <cassert>
 #include <iostream>
 #include <optional>
+#include <portaudio.hpp>
 
 #include "../../include/av/Frame.hpp"
 #include "../../include/av/MediaReader.hpp"
@@ -30,8 +30,7 @@ void with_resampling(const char *const url)
 	const auto interleaved = av::is_interleaved(decoder->sample_fmt);
 	const auto different_formats = (decoder->sample_fmt != decoder->request_sample_fmt);
 
-	std::cout << "different_formats: " << different_formats << '\n'
-			  << "requested sample format: " << av_get_sample_fmt_name(decoder->request_sample_fmt) << '\n'
+	std::cout << "requested sample format: " << av_get_sample_fmt_name(decoder->request_sample_fmt) << '\n'
 			  << "codec/sample_fmt: " << avcodec_get_name(decoder->codec_id) << '/' << av_get_sample_fmt_name(decoder->sample_fmt) << '\n'
 			  << "decoder->sample_rate: " << decoder->sample_rate << '\n'
 			  << "cdpar->sample_rate: " << cdpar->sample_rate << '\n';
@@ -43,18 +42,15 @@ void with_resampling(const char *const url)
 		rs_frame->format = decoder->request_sample_fmt;
 		rs_frame->sample_rate = cdpar->sample_rate;
 		rs_frame->ch_layout = cdpar->ch_layout;
+		// clang-format off
 		rs_opt.emplace( // create resampler
-			&cdpar->ch_layout,
-			decoder->request_sample_fmt,
-			cdpar->sample_rate, // output params
-			&cdpar->ch_layout,
-			decoder->sample_fmt,
-			cdpar->sample_rate); // input params
+			av::Resampler::InOutParams{&cdpar->ch_layout, decoder->request_sample_fmt, cdpar->sample_rate}, // output params
+			av::Resampler::InOutParams{&cdpar->ch_layout, decoder->sample_fmt, cdpar->sample_rate}); // input params
+		// clang-format on
 		std::cout << "resampling to: " << av_get_sample_fmt_name(decoder->request_sample_fmt) << '\n';
 	}
 
-	pa::PortAudio _;
-	pa::Stream pa_stream(0, cdpar->ch_layout.nb_channels, avsf2pasf(decoder->request_sample_fmt), cdpar->sample_rate, paFramesPerBufferUnspecified);
+	pa::Stream pa_stream(0, cdpar->ch_layout.nb_channels, avsf2pasf(decoder->request_sample_fmt), cdpar->sample_rate);
 	pa_stream.start();
 
 	while (const auto packet = format.read_packet())
@@ -72,25 +68,31 @@ void with_resampling(const char *const url)
 				rs_opt->convert_frame(rs_frame, frame);
 				frame = rs_frame;
 			}
-			pa_stream.write(interleaved ? (void *)frame->extended_data[0] : (void *)frame->extended_data, frame->nb_samples);
+			// clang-format off
+			pa_stream.write(
+				interleaved
+					? (void *)frame->extended_data[0]
+					: (void *)frame->extended_data,
+				frame->nb_samples);
+			// clang-format on
 		}
 	}
 }
 
-/*
 void without_resampling(const char *const url)
 {
 	av::MediaReader format(url);
 	const auto stream = format.find_best_stream(AVMEDIA_TYPE_AUDIO);
 	auto decoder = stream.create_decoder();
-
 	decoder.open();
 
-	pa::PortAudio _;
-	pa::Stream pa_stream(
-		0, stream->codecpar->ch_layout.nb_channels, avsf2pasf(decoder->sample_fmt), stream->codecpar->sample_rate, paFramesPerBufferUnspecified);
+	pa::Stream pa_stream(0, stream->codecpar->ch_layout.nb_channels, avsf2pasf(decoder->sample_fmt), stream->codecpar->sample_rate);
+	pa_stream.start();
 
-	std::cout << "codec: " << avcodec_get_name(decoder->codec_id) << '\n' << "sample format: " << av_get_sample_fmt_name(decoder->sample_fmt) << '\n';
+	// clang-format off
+	std::cout << "codec: " << avcodec_get_name(decoder->codec_id) << '\n'
+			  << "sample format: " << av_get_sample_fmt_name(decoder->sample_fmt) << '\n';
+	// clang-format on
 
 	while (const auto packet = format.read_packet())
 	{
@@ -101,15 +103,19 @@ void without_resampling(const char *const url)
 		while (const auto frame = decoder.receive_frame())
 		{
 			assert(decoder->sample_fmt == frame->format);
+			// clang-format off
 			pa_stream.write(
-				av::is_interleaved(decoder->sample_fmt) ? (void *)frame->extended_data[0] : (void *)frame->extended_data, frame->nb_samples);
+				av::is_interleaved(decoder->sample_fmt)
+					? (void *)frame->extended_data[0]
+					: (void *)frame->extended_data, frame->nb_samples);
+			// clang-format on
 		}
 	}
 }
-*/
 
 int main(const int argc, const char *const *const argv)
 {
-	return shared_main(argc, argv, with_resampling<uint8_t>);
-	// return shared_main(argc, argv, without_resampling);
+	pa::PortAudio _;
+	// return shared_main(argc, argv, with_resampling<uint8_t>);
+	return shared_main(argc, argv, without_resampling);
 }
