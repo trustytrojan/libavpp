@@ -14,7 +14,7 @@ extern "C"
 namespace av
 {
 
-class MediaReader : FormatContext
+class MediaReader : public FormatContext
 {
 	AVPacket *_pkt = nullptr;
 	std::vector<Stream> _streams;
