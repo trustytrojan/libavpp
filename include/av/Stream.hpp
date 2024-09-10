@@ -90,7 +90,7 @@ public:
 	Decoder create_decoder() const { return avcodec_find_decoder(_s->codecpar->codec_id); }
 
 	/**
-	 * @return An `Encoder` using this stream's codec.
+	 * @return An `Encoder` using this stream's codec identified by `_s->codecpar->codec_id`.
 	 * @note Codec parameters are not copied to the context.
 	 */
 	Encoder create_encoder() const { return avcodec_find_encoder(_s->codecpar->codec_id); }

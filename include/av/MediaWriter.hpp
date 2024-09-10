@@ -14,7 +14,6 @@ namespace av
 
 struct MediaWriter : FormatContext
 {
-public:
 	/**
 	 * @param url URL to write the media file to
 	 * @param oformat format to use for allocating the context, if NULL format_name and filename are used instead
