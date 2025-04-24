@@ -1,6 +1,6 @@
 BasedOnStyle: LLVM
 MaxEmptyLinesToKeep: 1
-ColumnLimit: 150
+ColumnLimit: 80
 ExperimentalAutoDetectBinPacking: true
 
 # Pack
@@ -51,7 +51,7 @@ InsertNewlineAtEOF: true
 
 # Remove
 RemoveBracesLLVM: true
-# KeepEmptyLines: # v19 only :(
-#   AtStartOfFile: false
-#   AtStartOfBlock: false
-#   AtEndOfFile: false
+KeepEmptyLines:
+  AtStartOfFile: false
+  AtStartOfBlock: false
+  AtEndOfFile: false

@@ -1,6 +1,6 @@
-#include "../../include/av/MediaReader.hpp"
 #include "util.cpp"
 #include <SFML/Graphics.hpp>
+#include <av/MediaReader.hpp>
 
 void display_attached_pic(const char *const url)
 {
@@ -14,7 +14,7 @@ void display_attached_pic(const char *const url)
 	// find attached pic stream
 	const auto itr = std::ranges::find_if(format.streams(), is_attached_pic);
 	if (itr == format.streams().cend())
-		throw std::runtime_error("no attached pic found in media file!");
+		throw std::runtime_error{"no attached pic found in media file!"};
 	const auto &stream = *itr;
 
 	// setup sfml window, load & draw texture
@@ -26,7 +26,9 @@ void display_attached_pic(const char *const url)
 		"av-test2");
 	window.setVerticalSyncEnabled(true);
 
-	sf::Texture texture{stream->attached_pic.data, static_cast<size_t>(stream->attached_pic.size)};
+	sf::Texture texture{
+		stream->attached_pic.data,
+		static_cast<size_t>(stream->attached_pic.size)};
 	sf::Sprite sprite{texture};
 
 	while (window.isOpen())

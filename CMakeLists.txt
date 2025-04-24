@@ -1,42 +1,35 @@
-include(FetchContent)
-
 cmake_minimum_required(VERSION 3.16)
 project(libavpp LANGUAGES CXX)
+cmake_policy(SET CMP0135 NEW)
+cmake_policy(SET CMP0167 NEW)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-
+set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 23)
 set(FFMPEG_LIBS avfilter avformat avcodec avutil swresample swscale)
 
-find_library(_ NAMES ${FFMPEG_LIBS} REQUIRED)
+option(LIBAVPP_BUILD_TESTS "Build libavpp test programs" ON)
 
-if (LIBAVPP_BUILD_TESTS)
-	# don't build SFML's audio or network libs
-	set(SFML_BUILD_AUDIO FALSE CACHE BOOL "" FORCE)
-	set(SFML_BUILD_NETWORK FALSE CACHE BOOL "" FORCE)
+foreach(lib IN LISTS FFMPEG_LIBS)
+    find_library(${lib} NAMES ${lib} REQUIRED)
+endforeach()
 
-	FetchContent_Declare(SFML
-		GIT_REPOSITORY https://github.com/SFML/SFML.git
-		GIT_TAG master)
-	FetchContent_MakeAvailable(SFML)
+add_library(libavpp INTERFACE)
+target_include_directories(libavpp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(libavpp INTERFACE ${FFMPEG_LIBS})
 
-	FetchContent_Declare(portaudio-pp
-		GIT_REPOSITORY https://github.com/trustytrojan/portaudio-pp
-		GIT_TAG main)
-	FetchContent_MakeAvailable(portaudio-pp)
+if(LIBAVPP_BUILD_TESTS)
+    include(FetchContent)
+    set(SFML_BUILD_AUDIO OFF)
+    set(SFML_BUILD_NETWORK OFF)
+    FetchContent_Declare(SFML URL https://github.com/SFML/SFML/archive/3.0.0.zip)
+    FetchContent_Declare(portaudio-pp URL https://github.com/trustytrojan/portaudio-pp/archive/main.zip)
+    FetchContent_MakeAvailable(SFML portaudio-pp)
 
-	# make compile_commands.json for clangd!!!!!!
-	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-	add_executable(audio-player src/tests/audio-player.cpp)
-	add_executable(display-attached-pic src/tests/display-attached-pic.cpp)
-	add_executable(video-player src/tests/video-player.cpp)
-
-	target_include_directories(audio-player PRIVATE ${portaudio-pp_SOURCE_DIR}/include)
-	target_include_directories(video-player PRIVATE ${portaudio-pp_SOURCE_DIR}/include)
-
-	target_link_libraries(audio-player PRIVATE portaudio ${FFMPEG_LIBS})
-	target_link_libraries(display-attached-pic PRIVATE sfml-graphics ${FFMPEG_LIBS})
-	target_link_libraries(video-player PRIVATE sfml-graphics portaudio ${FFMPEG_LIBS})
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+    include_directories(include ${portaudio-pp_SOURCE_DIR}/include)
+    link_libraries(${FFMPEG_LIBS} sfml-graphics portaudio)
+    add_executable(audio-player src/tests/audio-player.cpp)
+    add_executable(display-attached-pic src/tests/display-attached-pic.cpp)
+    add_executable(video-player src/tests/video-player.cpp)
+	add_executable(vaapi-encode src/tests/vaapi-encode.cpp)
 endif()

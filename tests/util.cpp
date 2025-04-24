@@ -9,7 +9,10 @@ extern "C"
 #include <portaudio.h>
 }
 
-int shared_main(const int argc, const char *const *const argv, void (*func)(const char *const))
+int shared_main(
+	const int argc,
+	const char *const *const argv,
+	void (*func)(const char *const))
 {
 	if (argc < 2 || !argv[1] || !*argv[1])
 	{
@@ -53,7 +56,9 @@ PaSampleFormat avsf2pasf(const AVSampleFormat av)
 		pa = paFloat32;
 		break;
 	default:
-		throw std::invalid_argument(std::string{"sample format not supported by portaudio: "} + av_get_sample_fmt_name(av));
+		throw std::invalid_argument(
+			std::string{"sample format not supported by portaudio: "} +
+			av_get_sample_fmt_name(av));
 	}
 
 	if (av >= 5)

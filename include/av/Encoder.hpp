@@ -14,20 +14,19 @@ namespace av
 
 class Encoder : public CodecContext
 {
-	AVPacket *_pkt = nullptr;
+	AVPacket *_pkt{};
 
 public:
 	Encoder(const AVCodec *const codec = NULL)
-		: CodecContext(codec) {}
-
-	~Encoder()
+		: CodecContext(codec)
 	{
-		av_packet_free(&_pkt);
 	}
 
-	bool send_frame(const AVFrame *const frm)
+	~Encoder() { av_packet_free(&_pkt); }
+
+	bool send_frame(const Frame &frm)
 	{
-		switch (const auto rc = avcodec_send_frame(_cdctx, frm))
+		switch (const auto rc = avcodec_send_frame(_cdctx, frm.get()))
 		{
 		case 0:
 		case AVERROR(EAGAIN):
@@ -42,14 +41,14 @@ public:
 	AVPacket *receive_packet()
 	{
 		if (!_pkt && !(_pkt = av_packet_alloc()))
-			throw std::runtime_error("av_packet_alloc() failed");
+			throw Error("av_packet_alloc");
 		switch (const auto rc = avcodec_receive_packet(_cdctx, _pkt))
 		{
 		case 0:
 			return _pkt;
 		case AVERROR(EAGAIN):
 		case AVERROR_EOF:
-			return NULL;
+			return nullptr;
 		default:
 			throw Error("avcodec_receive_packet", rc);
 		}

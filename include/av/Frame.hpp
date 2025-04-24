@@ -17,12 +17,15 @@ namespace av
 struct Frame : std::unique_ptr<AVFrame, decltype(&frame_free)>
 {
 	Frame(AVFrame *const _f)
-		: std::unique_ptr<AVFrame, decltype(&frame_free)>(_f, frame_free) {}
+		: std::unique_ptr<AVFrame, decltype(&frame_free)>(_f, frame_free)
+	{
+	}
 
-	Frame() : Frame(av_frame_alloc())
+	Frame()
+		: Frame(av_frame_alloc())
 	{
 		if (!get())
-			throw std::runtime_error("av_frame_alloc() failed");
+			throw Error("av_frame_alloc");
 	}
 
 	void get_buffer()

@@ -26,7 +26,11 @@ private:
 	SwrContext *_ctx = nullptr;
 
 public:
-	Resampler(const InOutParams &out, const InOutParams &in, int log_offset = 0, void *log_ctx = nullptr)
+	Resampler(
+		const InOutParams &out,
+		const InOutParams &in,
+		int log_offset = 0,
+		void *log_ctx = nullptr)
 	{
 		// clang-format off
 		if (const auto rc = swr_alloc_set_opts2(

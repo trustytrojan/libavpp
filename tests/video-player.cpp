@@ -2,12 +2,9 @@
 #include <SFML/Graphics.hpp>
 #include <portaudio.hpp>
 
-#include "../../include/av/Frame.hpp"
-#include "../../include/av/MediaReader.hpp"
-#include "../../include/av/SwScaler.hpp"
-
-// force to include this until i make libavpp a compiled library
-#include "../av/Util.cpp"
+#include <av/Frame.hpp>
+#include <av/MediaReader.hpp>
+#include <av/SwScaler.hpp>
 
 void play_video(const char *const url)
 {
@@ -31,21 +28,26 @@ void play_video(const char *const url)
 		astream->codecpar->sample_rate);
 	pa_stream.start();
 
-	// libswscale stride issue: if width is not divisible by 8, output will be distorted
+	// libswscale stride issue: if width is not divisible by 8, output will be
+	// distorted
 	const sf::Vector2u size = {
-		static_cast<unsigned int>(av::nearest_multiple_8(vstream->codecpar->width)),
+		static_cast<unsigned int>(
+			av::nearest_multiple_8(vstream->codecpar->width)),
 		static_cast<unsigned int>(vstream->codecpar->height),
 	};
 
-	// create scaler to convert from yuv420p to rgba
-	av::SwScaler scaler({size.x, size.y, (AVPixelFormat)vstream->codecpar->format}, {size.x, size.y, AV_PIX_FMT_RGBA});
+	// create scaler to convert to rgba
+	av::SwScaler scaler{
+		{size.x, size.y, (AVPixelFormat)vstream->codecpar->format},
+		{size.x, size.y, AV_PIX_FMT_RGBA}};
 	av::Frame scaled_frame;
 
 	// create sfml window, texture, and sprite
-	sf::RenderWindow window(sf::VideoMode(size), "video-player", sf::Style::Titlebar);
-	sf::Texture texture(size);
+	sf::RenderWindow window{
+		sf::VideoMode{size}, "video-player", sf::Style::Titlebar};
+	sf::Texture texture{size};
+	sf::Sprite sprite{texture};
 
-	sf::Sprite sprite(texture);
 	while (const auto packet = format.read_packet())
 	{
 		if (!window.isOpen())

@@ -1,34 +1,71 @@
 #pragma once
 
-#include <stdexcept>
 extern "C"
 {
 #include <libavcodec/avcodec.h>
-#include <libavutil/avutil.h>
 #include <libavfilter/avfilter.h>
+#include <libavutil/avutil.h>
 }
+
+#include "Error.hpp"
 
 namespace av
 {
 
+inline void link_filters(
+	AVFilterContext *src,
+	unsigned src_pad,
+	AVFilterContext *dst,
+	unsigned dst_pad)
+{
+	if (const int rc = avfilter_link(src, src_pad, dst, dst_pad); rc < 0)
+		throw Error("avfilter_link", rc);
+}
+
 // Wrapper over `av_frame_free`. Used by `av::Frame`.
-void frame_free(AVFrame *_f);
+inline void frame_free(AVFrame *_f)
+{
+	av_frame_free(&_f);
+}
 
 // used to solve the swscale stride issue
-int nearest_multiple_8(const int x);
+inline int nearest_multiple_8(const int x)
+{
+	const auto rem8 = x % 8;
 
-void ch_layout_copy(AVChannelLayout *dst, const AVChannelLayout *src);
-void parameters_from_context(AVCodecParameters *par, const AVCodecContext *ctx);
-void parameters_to_context(AVCodecContext *ctx, const AVCodecParameters *par);
+	// move towards the nearest multiple of 8
+	if (rem8 < 4)
+		return x - rem8;
+	else
+		return x + 8 - rem8;
+}
 
-void link_filters(AVFilterContext *src, unsigned src_pad, AVFilterContext *dst, unsigned dst_pad);
+inline void ch_layout_copy(AVChannelLayout *dst, const AVChannelLayout *src)
+{
+	if (const auto rc = av_channel_layout_copy(dst, src); rc < 0)
+		throw Error("av_channel_layout_copy", rc);
+}
+
+inline void
+parameters_from_context(AVCodecParameters *par, const AVCodecContext *codec)
+{
+	if (const auto rc = avcodec_parameters_from_context(par, codec); rc < 0)
+		throw Error("avcodec_parameters_from_context", rc);
+}
+
+inline void parameters_to_context(
+	AVCodecContext *const codec, const AVCodecParameters *const par)
+{
+	if (const auto rc = avcodec_parameters_to_context(codec, par); rc < 0)
+		throw Error("avcodec_parameters_from_context", rc);
+}
 
 /**
  * @returns Whether `sample_fmt` is an interleaved/non-planar sample format.
  * @note A return value of `false` implies that `sample_fmt` is a
  * non-interleaved/planar sample format.
  */
-constexpr bool is_interleaved(const AVSampleFormat sample_fmt)
+inline bool is_interleaved(const AVSampleFormat sample_fmt)
 {
 	if (sample_fmt >= 0 && sample_fmt <= 4)
 		return true;
@@ -38,7 +75,7 @@ constexpr bool is_interleaved(const AVSampleFormat sample_fmt)
 }
 
 template <typename T, bool planar>
-constexpr AVSampleFormat smpfmt_from_type()
+consteval AVSampleFormat smpfmt_from_type()
 {
 	int avsf;
 

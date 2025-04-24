@@ -7,8 +7,6 @@ extern "C"
 #include <libavfilter/buffersrc.h>
 }
 
-#include <stdexcept>
-
 #include "Error.hpp"
 #include "FilterContext.hpp"
 
@@ -27,7 +25,7 @@ public:
 	FilterGraph()
 	{
 		if (!(_fg = avfilter_graph_alloc()))
-			throw std::runtime_error("Failed to allocate filter graph");
+			throw Error("avfilter_graph_alloc");
 	}
 
 	~FilterGraph() { avfilter_graph_free(&_fg); }
@@ -35,10 +33,15 @@ public:
 	AVFilterGraph *get() { return _fg; }
 	AVFilterGraph *operator->() { return _fg; }
 
-	FilterContext add_filter(const AVFilter *const filter, const char *const name, const char *const args = NULL)
+	FilterContext add_filter(
+		const AVFilter *const filter,
+		const char *const name,
+		const char *const args = NULL)
 	{
 		AVFilterContext *filter_ctx;
-		if (const int rc = avfilter_graph_create_filter(&filter_ctx, filter, name, args, NULL, _fg); rc < 0)
+		if (const int rc = avfilter_graph_create_filter(
+				&filter_ctx, filter, name, args, NULL, _fg);
+			rc < 0)
 			throw Error("avfilter_graph_create_filter", rc);
 		return filter_ctx;
 	}
@@ -46,7 +49,9 @@ public:
 	void parse(const char *const filters)
 	{
 		AVFilterInOut *inputs, *outputs;
-		if (const int rc = avfilter_graph_parse2(_fg, filters, &inputs, &outputs); rc < 0)
+		if (const int rc =
+				avfilter_graph_parse2(_fg, filters, &inputs, &outputs);
+			rc < 0)
 			throw Error("avfilter_graph_parse2", rc);
 		avfilter_inout_free(&inputs);
 		avfilter_inout_free(&outputs);

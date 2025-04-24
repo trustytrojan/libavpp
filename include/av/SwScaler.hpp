@@ -25,11 +25,25 @@ private:
 	SwsContext *const _ctx;
 
 public:
-	SwScaler(const SrcDstArgs &src, const SrcDstArgs &dst, int flags = 0, const double *param = NULL)
-		: _ctx(sws_getContext(src.width, src.height, src.format, dst.width, dst.height, dst.format, flags, src.filter, dst.filter, param))
+	SwScaler(
+		const SrcDstArgs &src,
+		const SrcDstArgs &dst,
+		int flags = 0,
+		const double *param = NULL)
+		: _ctx(sws_getContext(
+			  static_cast<int>(src.width),
+			  static_cast<int>(src.height),
+			  src.format,
+			  static_cast<int>(dst.width),
+			  static_cast<int>(dst.height),
+			  dst.format,
+			  flags,
+			  src.filter,
+			  dst.filter,
+			  param))
 	{
 		if (!_ctx)
-			throw std::runtime_error("sws_getContext() failed");
+			throw Error("sws_getContext");
 	}
 
 	~SwScaler() { sws_freeContext(_ctx); }
