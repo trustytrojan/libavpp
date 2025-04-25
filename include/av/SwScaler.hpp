@@ -43,7 +43,7 @@ public:
 			  param))
 	{
 		if (!_ctx)
-			throw Error("sws_getContext");
+			throw Error("sws_getContext", AVERROR(ENOMEM));
 	}
 
 	~SwScaler() { sws_freeContext(_ctx); }

@@ -25,7 +25,7 @@ struct Frame : std::unique_ptr<AVFrame, decltype(&frame_free)>
 		: Frame(av_frame_alloc())
 	{
 		if (!get())
-			throw Error("av_frame_alloc");
+			throw Error("av_frame_alloc", AVERROR(ENOMEM));
 	}
 
 	void get_buffer()

@@ -26,7 +26,7 @@ public:
 		const int initial_pool_size = 20)
 	{
 		if (!(_ctx = av_hwframe_ctx_alloc(devctx)))
-			throw Error("av_hwframe_ctx_alloc");
+			throw Error("av_hwframe_ctx_alloc", AVERROR(ENOMEM));
 
 		const auto hwfctx = reinterpret_cast<AVHWFramesContext *>(_ctx->data);
 		hwfctx->format = format;

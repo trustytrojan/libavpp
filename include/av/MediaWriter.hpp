@@ -20,8 +20,7 @@ struct MediaWriter : FormatContext
 	 * format_name and filename are used instead
 	 * @throws `av::Error` if `avformat_alloc_output_context2` fails
 	 */
-	MediaWriter(
-		const char *const url, const AVOutputFormat *const oformat = NULL)
+	MediaWriter(const char *const url, const AVOutputFormat *const oformat = {})
 	{
 		if (const auto rc =
 				avformat_alloc_output_context2(&_fmtctx, oformat, NULL, url);
@@ -29,18 +28,17 @@ struct MediaWriter : FormatContext
 			throw Error("avformat_alloc_output_context2", rc);
 		if (!(_fmtctx->flags & AVFMT_NOFILE))
 		{
-			if (const auto rc =
-					avio_open(&_fmtctx->pb, "out.mp4", AVIO_FLAG_WRITE);
+			if (const auto rc = avio_open(&_fmtctx->pb, url, AVIO_FLAG_WRITE);
 				rc < 0)
 				throw av::Error("avio_open", rc);
 		}
 	}
 
-	Stream add_stream()
+	Stream new_stream(const struct AVCodec *const c = {})
 	{
-		if (const auto stream = avformat_new_stream(_fmtctx, NULL))
+		if (const auto stream = avformat_new_stream(_fmtctx, c))
 			return stream;
-		throw Error("avformat_new_stream");
+		throw Error("avformat_new_stream", AVERROR(ENOMEM));
 	}
 
 	/**

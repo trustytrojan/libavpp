@@ -11,8 +11,8 @@ namespace av
 class FormatContext
 {
 protected:
-	AVFormatContext *_fmtctx = nullptr;
-	FormatContext() {};
+	AVFormatContext *_fmtctx{};
+	FormatContext() = default;
 
 public:
 	~FormatContext() { avformat_free_context(_fmtctx); }
@@ -20,18 +20,20 @@ public:
 	FormatContext(const FormatContext &) = delete;
 	FormatContext &operator=(const FormatContext &) = delete;
 
-	FormatContext(FormatContext &&other)
+	FormatContext(FormatContext &&other) noexcept
 	{
-		this->~FormatContext();
 		_fmtctx = other._fmtctx;
 		other._fmtctx = nullptr;
 	}
 
-	FormatContext &operator=(FormatContext &&other)
+	FormatContext &operator=(FormatContext &&other) noexcept
 	{
-		this->~FormatContext();
-		_fmtctx = other._fmtctx;
-		other._fmtctx = nullptr;
+		if (this != &other)
+		{
+			avformat_free_context(_fmtctx);
+			_fmtctx = other._fmtctx;
+			other._fmtctx = nullptr;
+		}
 		return *this;
 	}
 

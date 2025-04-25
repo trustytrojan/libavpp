@@ -12,6 +12,13 @@ extern "C"
 namespace av
 {
 
+inline const AVCodec *find_encoder_by_name(const char *const name)
+{
+	if (const auto codec = avcodec_find_encoder_by_name(name))
+		return codec;
+	throw Error("avcodec_find_encoder_by_name", AVERROR_ENCODER_NOT_FOUND);
+}
+
 inline void link_filters(
 	AVFilterContext *src,
 	unsigned src_pad,

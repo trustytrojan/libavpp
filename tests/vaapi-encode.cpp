@@ -88,7 +88,7 @@ void cpp_main(
 		}
 
 		av::HWFramesContext::transfer_data(hw_frame, sw_frame);
-		enc.send_frame(hw_frame);
+		enc.send_frame(hw_frame.get());
 
 		while (const auto pkt = enc.receive_packet())
 		{
@@ -107,14 +107,6 @@ void cpp_main(
 
 int main(int argc, char *argv[])
 {
-	int size, err;
-	FILE *fin = NULL, *fout = NULL;
-	AVFrame *sw_frame = NULL, *hw_frame = NULL;
-	AVCodecContext *avctx = NULL;
-	AVBufferRef *hw_device_ctx = NULL;
-	const AVCodec *codec = NULL;
-	const char *enc_name = "h264_vaapi";
-
 	if (argc < 5)
 	{
 		fprintf(

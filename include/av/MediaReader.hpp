@@ -134,7 +134,7 @@ public:
 	const AVPacket *read_packet()
 	{
 		if (!_pkt && !(_pkt = av_packet_alloc()))
-			throw Error("av_packet_alloc");
+			throw Error("av_packet_alloc", AVERROR(ENOMEM));
 		switch (const auto rc = av_read_frame(_fmtctx, _pkt))
 		{
 		case 0:

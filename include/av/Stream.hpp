@@ -116,6 +116,14 @@ public:
 	{
 		return avcodec_find_encoder(_s->codecpar->codec_id);
 	}
+
+	void copy_params(const CodecContext &cdctx)
+	{
+		if (const auto rc =
+				avcodec_parameters_from_context(_s->codecpar, cdctx.get());
+			rc < 0)
+			throw Error("avcodec_parameters_from_context", rc);
+	}
 };
 
 } // namespace av

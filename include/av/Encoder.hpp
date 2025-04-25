@@ -24,9 +24,9 @@ public:
 
 	~Encoder() { av_packet_free(&_pkt); }
 
-	bool send_frame(const Frame &frm)
+	bool send_frame(const AVFrame *frm)
 	{
-		switch (const auto rc = avcodec_send_frame(_cdctx, frm.get()))
+		switch (const auto rc = avcodec_send_frame(_cdctx, frm))
 		{
 		case 0:
 		case AVERROR(EAGAIN):
@@ -41,7 +41,7 @@ public:
 	AVPacket *receive_packet()
 	{
 		if (!_pkt && !(_pkt = av_packet_alloc()))
-			throw Error("av_packet_alloc");
+			throw Error("av_packet_alloc", AVERROR(ENOMEM));
 		switch (const auto rc = avcodec_receive_packet(_cdctx, _pkt))
 		{
 		case 0:

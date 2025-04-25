@@ -14,7 +14,7 @@ namespace av
 class CodecContext
 {
 protected:
-	AVCodecContext *_cdctx = nullptr;
+	AVCodecContext *_cdctx{};
 
 public:
 	/**
@@ -28,15 +28,30 @@ public:
 	CodecContext(const AVCodec *const codec = NULL)
 	{
 		if (!(_cdctx = avcodec_alloc_context3(codec)))
-			throw Error("avcodec_alloc_context3");
+			throw Error("avcodec_alloc_context3", AVERROR(ENOMEM));
 	}
 
 	~CodecContext() { avcodec_free_context(&_cdctx); }
 
 	CodecContext(const CodecContext &) = delete;
 	CodecContext &operator=(const CodecContext &) = delete;
-	CodecContext(CodecContext &&) = delete;
-	CodecContext &operator=(CodecContext &&) = delete;
+
+	CodecContext(CodecContext &&other) noexcept
+	{
+		_cdctx = other._cdctx;
+		other._cdctx = {};
+	}
+
+	CodecContext &operator=(CodecContext &&other) noexcept
+	{
+		if (this != &other)
+		{
+			avcodec_free_context(&_cdctx);
+			_cdctx = other._cdctx;
+			other._cdctx = {};
+		}
+		return *this;
+	}
 
 	/**
 	 * Access the internal `AVCodecContext`.
@@ -92,6 +107,12 @@ public:
 	{
 		if (const auto rc = avcodec_open2(_cdctx, codec, options); rc < 0)
 			throw Error("avcodec_open2", rc);
+	}
+
+	void set_hwdevice_ctx(const HWDeviceContext &hwdctx)
+	{
+		if (!(_cdctx->hw_device_ctx = av_buffer_ref(hwdctx.get_ref())))
+			throw Error("av_buffer_ref", AVERROR(ENOMEM));
 	}
 
 	/**

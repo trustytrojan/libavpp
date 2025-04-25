@@ -60,7 +60,7 @@ public:
 	const AVFrame *receive_frame()
 	{
 		if (!_frm && !(_frm = av_frame_alloc()))
-			throw Error("av_frame_alloc");
+			throw Error("av_frame_alloc", AVERROR(ENOMEM));
 		switch (const auto rc = avcodec_receive_frame(_cdctx, _frm))
 		{
 		case 0:

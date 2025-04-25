@@ -12,13 +12,13 @@ namespace av
 
 struct Error : std::runtime_error
 {
-	Error(const char *const func, const int errnum)
-		: std::runtime_error{std::string{func} + ": " + av_err2str(errnum)}
-	{
-	}
+	const char *const func;
+	const int errnum;
 
-	Error(const char *const func)
-		: std::runtime_error{std::string{func} + "failed"}
+	Error(const char *const func, const int errnum)
+		: std::runtime_error{std::string{func} + ": " + av_err2str(errnum)},
+		  func{func},
+		  errnum{errnum}
 	{
 	}
 };
