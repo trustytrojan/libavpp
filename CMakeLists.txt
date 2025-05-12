@@ -7,10 +7,10 @@ set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 23)
 set(FFMPEG_LIBS avfilter avformat avcodec avutil swresample swscale)
 
-option(LIBAVPP_BUILD_TESTS "Build libavpp test programs" ON)
+option(LIBAVPP_BUILD_TESTS "Build libavpp test programs" OFF)
 
-foreach(lib IN LISTS FFMPEG_LIBS)
-    find_library(${lib} NAMES ${lib} REQUIRED)
+foreach(LIB IN LISTS FFMPEG_LIBS)
+    find_library(${LIB} REQUIRED)
 endforeach()
 
 add_library(libavpp INTERFACE)
