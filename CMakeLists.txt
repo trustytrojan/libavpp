@@ -10,7 +10,7 @@ set(FFMPEG_LIBS avfilter avformat avcodec avutil swresample swscale)
 option(LIBAVPP_BUILD_TESTS "Build libavpp test programs" OFF)
 
 foreach(LIB IN LISTS FFMPEG_LIBS)
-    find_library(${LIB} REQUIRED)
+    find_library(${LIB} NAMES ${LIB} REQUIRED)
 endforeach()
 
 add_library(libavpp INTERFACE)
