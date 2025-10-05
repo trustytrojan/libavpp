@@ -4,6 +4,7 @@ Music
 build
 .cache
 *.mp4
+*.mkv
 *.yuv
 *.h264
 examples
