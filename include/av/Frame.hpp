@@ -28,6 +28,9 @@ struct Frame : std::unique_ptr<AVFrame, decltype(&frame_free)>
 			throw Error("av_frame_alloc", AVERROR(ENOMEM));
 	}
 
+	Frame(Frame &&) = default;
+	Frame &operator=(Frame &&) = default;
+
 	void get_buffer()
 	{
 		if (const auto rc = av_frame_get_buffer(get(), 0); rc < 0)

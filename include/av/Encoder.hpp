@@ -2,7 +2,6 @@
 
 #include "CodecContext.hpp"
 #include "Error.hpp"
-#include <stdexcept>
 
 extern "C"
 {

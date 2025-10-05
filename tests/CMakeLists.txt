@@ -29,7 +29,7 @@ elseif(LINUX)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-link_libraries(libavpp sfml-graphics)
+link_libraries(libavpp SFML::Graphics)
 
 ## tests
 add_executable(audio-player audio-player.cpp)

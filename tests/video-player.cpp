@@ -20,7 +20,7 @@ void play_video(const char *const url)
 	adecoder.open();
 
 	// create portaudio stream using audio decoder's output format
-	pa::PortAudio _;
+	pa::Init _;
 	pa::Stream pa_stream(
 		0,
 		astream->codecpar->ch_layout.nb_channels,

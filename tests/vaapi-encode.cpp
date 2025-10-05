@@ -14,7 +14,11 @@ extern "C"
 #include <av/HWFramesContext.hpp>
 
 void cpp_main(
-	int width, int height, const char *const inpath, const char *const outpath)
+	int width,
+	int height,
+	int framerate,
+	const char *const inpath,
+	const char *const outpath)
 {
 	FILE *fin, *fout;
 	const auto size = width * height;
@@ -44,8 +48,8 @@ void cpp_main(
 	av::Encoder enc{codec};
 	enc->width = width;
 	enc->height = height;
-	enc->time_base = (AVRational){1, 25};
-	enc->framerate = (AVRational){25, 1};
+	enc->time_base = (AVRational){1, framerate};
+	enc->framerate = (AVRational){framerate, 1};
 	enc->sample_aspect_ratio = (AVRational){1, 1};
 	enc->pix_fmt = AV_PIX_FMT_VAAPI;
 
@@ -60,32 +64,16 @@ void cpp_main(
 	sw_frame->format = AV_PIX_FMT_NV12;
 	sw_frame.get_buffer();
 
-	av::Frame hw_frame;
-	hwfctx.get_buffer(hw_frame);
-
 	while (true)
 	{
-		int err;
-
-		if (!fread(sw_frame->data[0], size, 1, fin))
-		{
-			fprintf(
-				stderr,
-				"data[0] fread <= 0, ferror: %d, feof: %d\n",
-				ferror(fin),
-				feof(fin));
+		if (fread(sw_frame->data[0], 1, size, fin) < size)
 			break;
-		}
-
-		if (!fread(sw_frame->data[1], size / 2, 1, fin))
-		{
-			fprintf(
-				stderr,
-				"data[1] fread <= 0, ferror: %d, feof: %d\n",
-				ferror(fin),
-				feof(fin));
+		if (fread(sw_frame->data[1], 1, size / 2, fin) < size / 2)
 			break;
-		}
+
+		// Get a new hardware frame from the pool for each software frame.
+		av::Frame hw_frame;
+		hwfctx.get_buffer(hw_frame);
 
 		av::HWFramesContext::transfer_data(hw_frame, sw_frame);
 		enc.send_frame(hw_frame.get());
@@ -93,11 +81,23 @@ void cpp_main(
 		while (const auto pkt = enc.receive_packet())
 		{
 			pkt->stream_index = 0;
-			if (pkt->size != fwrite(pkt->data, pkt->size, 1, fout))
+			if (fwrite(pkt->data, 1, pkt->size, fout) != pkt->size)
 			{
 				fprintf(stderr, "failed to write whole packet\n");
 				throw;
 			}
+		}
+	}
+
+	// Flush the encoder
+	enc.send_frame(nullptr);
+	while (const auto pkt = enc.receive_packet())
+	{
+		pkt->stream_index = 0;
+		if (fwrite(pkt->data, 1, pkt->size, fout) != pkt->size)
+		{
+			fprintf(stderr, "failed to write whole packet\n");
+			throw;
 		}
 	}
 
@@ -107,17 +107,19 @@ void cpp_main(
 
 int main(int argc, char *argv[])
 {
-	if (argc < 5)
+	if (argc < 6)
 	{
 		fprintf(
 			stderr,
-			"Usage: %s <width> <height> <input nv12 file> <output h264 file>\n",
+			"Usage: %s <width> <height> <framerate> <input nv12 file> "
+			"<output h264 file>\n",
 			argv[0]);
 		return -1;
 	}
 
 	int width = atoi(argv[1]);
 	int height = atoi(argv[2]);
-	cpp_main(width, height, argv[3], argv[4]);
+	int framerate = atoi(argv[3]);
+	cpp_main(width, height, framerate, argv[4], argv[5]);
 	return 0;
 }

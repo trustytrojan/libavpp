@@ -130,7 +130,7 @@ void without_resampling(const char *const url)
 
 int main(const int argc, const char *const *const argv)
 {
-	pa::PortAudio _;
+	pa::Init _;
 	// return shared_main(argc, argv, with_resampling<uint8_t>);
 	return shared_main(argc, argv, without_resampling);
 }
