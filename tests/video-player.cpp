@@ -7,6 +7,51 @@
 #include <av/MediaReader.hpp>
 #include <av/SwScaler.hpp>
 
+// Copies a padded frame to a tightly-packed buffer and updates the texture.
+void update_texture_from_padded_frame(
+	sf::Texture &texture, const AVFrame *const frame, const sf::Vector2u &size)
+{
+	const int linesize = frame->linesize[0];
+	const int width_bytes = size.x * 4; // 4 bytes for RGBA
+
+	static std::vector<uint8_t> pixel_buffer;
+	pixel_buffer.resize(width_bytes * size.y);
+
+	const uint8_t *src_pixels = frame->data[0];
+	uint8_t *dst_pixels = pixel_buffer.data();
+
+	for (unsigned int i = 0; i < size.y; ++i)
+	{
+		// Copy one line of pixels
+		memcpy(dst_pixels, src_pixels, width_bytes);
+		// Move pointers to the start of the next line
+		dst_pixels += width_bytes; // Tightly packed destination
+		src_pixels += linesize;	   // Padded source
+	}
+	texture.update(pixel_buffer.data());
+}
+
+// Handles potential stride/linesize issues by copying frame data line-by-line
+// if padding is present.
+void update_texture_from_frame(
+	sf::Texture &texture, const AVFrame *const frame, const sf::Vector2u &size)
+{
+	// Check if the frame has padding
+	const int linesize = frame->linesize[0];
+	const int width_bytes = size.x * 4; // 4 bytes for RGBA
+
+	if (linesize == width_bytes)
+	{
+		// No padding, we can update directly
+		texture.update(frame->data[0]);
+	}
+	else
+	{
+		// Padding exists, copy line by line
+		update_texture_from_padded_frame(texture, frame, size);
+	}
+}
+
 void play_video(const char *const url)
 {
 	av::MediaReader format(url);
@@ -29,13 +74,8 @@ void play_video(const char *const url)
 		astream->codecpar->sample_rate);
 	pa_stream.start();
 
-	// libswscale stride issue: if width is not divisible by 8, output will be
-	// distorted
-	const sf::Vector2u size = {
-		static_cast<unsigned int>(
-			av::nearest_multiple_8(vstream->codecpar->width)),
-		static_cast<unsigned int>(vstream->codecpar->height),
-	};
+	const sf::Vector2u size(
+		vstream->codecpar->width, vstream->codecpar->height);
 
 	// create scaler to convert to rgba
 	av::SwScaler scaler{
@@ -53,17 +93,21 @@ void play_video(const char *const url)
 	{
 		if (!window.isOpen())
 			break;
+		while (const auto event = window.pollEvent())
+			if (event->is<sf::Event::Closed>())
+				window.close();
 
 		if (packet->stream_index == vstream->index)
 		{
 			// decode, scale, and render video frame
 			vdecoder.send_packet(packet);
-			const auto frame = vdecoder.receive_frame();
-			scaler.scale_frame(scaled_frame.get(), frame);
-			texture.update(scaled_frame->data[0]);
-			sprite.setTexture(texture, true);
-			window.draw(sprite);
-			window.display();
+			while (const auto frame = vdecoder.receive_frame())
+			{
+				scaler.scale_frame(scaled_frame.get(), frame);
+				update_texture_from_frame(texture, scaled_frame.get(), size);
+				window.draw(sprite);
+				window.display();
+			}
 		}
 		else if (packet->stream_index == astream->index)
 		{
@@ -87,10 +131,6 @@ void play_video(const char *const url)
 					std::cerr << e.what() << '\n';
 				}
 		}
-
-		while (const auto event = window.pollEvent())
-			if (event->is<sf::Event::Closed>())
-				window.close();
 	}
 }
 
