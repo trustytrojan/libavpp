@@ -13,7 +13,7 @@ void display_attached_pic(const char *const url)
 
 	// find attached pic stream
 	const auto itr = std::ranges::find_if(format.streams(), is_attached_pic);
-	if (itr == format.streams().cend())
+	if (itr == format.streams().end())
 		throw std::runtime_error{"no attached pic found in media file!"};
 	const auto &stream = *itr;
 

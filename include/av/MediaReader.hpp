@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <span>
 
 #include "Error.hpp"
 #include "FormatContext.hpp"
@@ -16,12 +16,11 @@ namespace av
 
 /**
  * A format context in "read" or "input" mode. Fetches stream info automatically
- * into a vector, accesible with `streams()`.
+ * into a span, accesible with `streams()`.
  */
 class MediaReader : public FormatContext
 {
-	AVPacket *_pkt = nullptr;
-	std::vector<Stream> _streams;
+	AVPacket *_pkt{};
 
 public:
 	MediaReader(const char *const url)
@@ -31,8 +30,6 @@ public:
 			throw Error("avformat_open_input", rc);
 		if (const auto rc = avformat_find_stream_info(_fmtctx, NULL); rc < 0)
 			throw Error("avformat_find_stream_info", rc);
-		_streams.assign(
-			_fmtctx->streams, _fmtctx->streams + _fmtctx->nb_streams);
 	}
 
 	MediaReader(const std::string &url)
@@ -43,20 +40,13 @@ public:
 	~MediaReader() { av_packet_free(&_pkt); }
 
 	/**
-	 * Print detailed information about the input or output format, such as
-	 * duration, bitrate, streams, container, programs, metadata, side data,
-	 * codec and time base.
-	 * @param index index of the stream to dump information about
-	 */
-	void print_info(int index)
-	{
-		av_dump_format(_fmtctx, index, _fmtctx->url, 0);
-	}
-
-	/**
 	 * @returns The streams contained in this media source.
 	 */
-	const std::vector<Stream> &streams() const { return _streams; }
+	std::span<const Stream> streams() const
+	{
+		// our av::Stream is literally just an AVStream *, this is safe
+		return {(Stream *)_fmtctx->streams, _fmtctx->nb_streams};
+	}
 
 	/**
 	 * Wrapper over `av_dict_get(fmtctx->metadata, ...)`.

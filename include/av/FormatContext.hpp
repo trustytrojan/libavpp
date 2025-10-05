@@ -66,6 +66,15 @@ public:
 	 * It belongs to and is managed by this class.
 	 */
 	const AVFormatContext *operator->() const { return _fmtctx; }
+
+	/**
+	 * @param index User-defined input/output number. This is printed as `Output
+	 * #0, mp4, ...` if `index` is `0`.
+	 */
+	void print_info(int index)
+	{
+		av_dump_format(_fmtctx, index, _fmtctx->url, (bool)_fmtctx->oformat);
+	}
 };
 
 } // namespace av

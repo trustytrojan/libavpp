@@ -1,4 +1,3 @@
-#include "av/Util.hpp"
 #include "util.cpp"
 #include <SFML/Graphics.hpp>
 #include <portaudio.hpp>
@@ -20,7 +19,7 @@ void update_texture_from_padded_frame(
 	const uint8_t *src_pixels = frame->data[0];
 	uint8_t *dst_pixels = pixel_buffer.data();
 
-	for (unsigned int i = 0; i < size.y; ++i)
+	for (unsigned i = 0; i < size.y; ++i)
 	{
 		// Copy one line of pixels
 		memcpy(dst_pixels, src_pixels, width_bytes);
@@ -55,6 +54,7 @@ void update_texture_from_frame(
 void play_video(const char *const url)
 {
 	av::MediaReader format(url);
+	format.print_info(0);
 
 	const auto &vstream = format.find_best_stream(AVMEDIA_TYPE_VIDEO);
 	const auto &astream = format.find_best_stream(AVMEDIA_TYPE_AUDIO);
@@ -69,9 +69,9 @@ void play_video(const char *const url)
 	pa::Init _;
 	pa::Stream pa_stream(
 		0,
-		astream->codecpar->ch_layout.nb_channels,
+		astream.nb_channels(),
 		avsf2pasf((AVSampleFormat)astream->codecpar->format),
-		astream->codecpar->sample_rate);
+		astream.sample_rate());
 	pa_stream.start();
 
 	const sf::Vector2u size(
@@ -116,13 +116,11 @@ void play_video(const char *const url)
 			while (const auto frame = adecoder.receive_frame())
 				try
 				{
-					// clang-format off
 					pa_stream.write(
-						av::is_interleaved(adecoder->sample_fmt)
-							? (void *)frame->extended_data[0]
-							: (void *)frame->extended_data,
+						av_sample_fmt_is_planar(adecoder->sample_fmt)
+							? (void *)frame->extended_data
+							: (void *)frame->extended_data[0],
 						frame->nb_samples);
-					// clang-format on
 				}
 				catch (const pa::Error &e)
 				{
