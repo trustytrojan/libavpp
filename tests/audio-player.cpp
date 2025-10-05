@@ -7,6 +7,7 @@
 #include <av/MediaReader.hpp>
 #include <av/Resampler.hpp>
 
+#include "av/Util.hpp"
 #include "util.cpp"
 
 template <typename SampleFormat, bool planar = true>

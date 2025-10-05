@@ -29,12 +29,6 @@ inline void link_filters(
 		throw Error("avfilter_link", rc);
 }
 
-// Wrapper over `av_frame_free`. Used by `av::Frame`.
-inline void frame_free(AVFrame *_f)
-{
-	av_frame_free(&_f);
-}
-
 // used to solve the swscale stride issue
 inline int nearest_multiple_8(const int x)
 {

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Error.hpp"
-#include "Util.hpp"
-#include <memory>
 
 extern "C"
 {
@@ -12,28 +10,50 @@ extern "C"
 namespace av
 {
 
-// Extension of `std::unique_ptr<AVFrame, ...>`.
-// Eases usage of `av::Scaler` and `av::Resampler`.
-struct Frame : std::unique_ptr<AVFrame, decltype(&frame_free)>
+/**
+ * Wrapper over an `AVFrame *`.
+ * Eases usage of `av::Scaler` and `av::Resampler`.
+ */
+class Frame
 {
-	Frame(AVFrame *const _f)
-		: std::unique_ptr<AVFrame, decltype(&frame_free)>(_f, frame_free)
-	{
-	}
+	AVFrame *_frame{};
 
+public:
 	Frame()
-		: Frame(av_frame_alloc())
 	{
-		if (!get())
+		if (!(_frame = av_frame_alloc()))
 			throw Error("av_frame_alloc", AVERROR(ENOMEM));
 	}
 
-	Frame(Frame &&) = default;
-	Frame &operator=(Frame &&) = default;
+	~Frame() { av_frame_free(&_frame); }
 
-	void get_buffer()
+	Frame(const Frame &) = delete;
+	Frame &operator=(const Frame &) = delete;
+
+	Frame(Frame &&other)
 	{
-		if (const auto rc = av_frame_get_buffer(get(), 0); rc < 0)
+		_frame = other._frame;
+		other._frame = {};
+	}
+
+	Frame &operator=(Frame &&other)
+	{
+		if (this != &other)
+		{
+			av_frame_free(&_frame);
+			_frame = other._frame;
+			other._frame = {};
+		}
+		return *this;
+	}
+
+	// Provide access to the underlying pointer
+	AVFrame *get() const { return _frame; }
+	AVFrame *operator->() const { return _frame; }
+
+	void get_buffer(int align = 0)
+	{
+		if (const auto rc = av_frame_get_buffer(get(), align); rc < 0)
 			throw Error("av_frame_get_buffer", rc);
 	}
 };

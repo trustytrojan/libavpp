@@ -1,3 +1,4 @@
+#include "av/Util.hpp"
 #include <av/HWDeviceContext.hpp>
 #include <av/HWFramesContext.hpp>
 #include <av/MediaReader.hpp>
