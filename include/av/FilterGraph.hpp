@@ -25,7 +25,7 @@ public:
 	FilterGraph()
 	{
 		if (!(_fg = avfilter_graph_alloc()))
-			throw Error("avfilter_graph_alloc");
+			throw Error("avfilter_graph_alloc", AVERROR(ENOMEM));
 	}
 
 	~FilterGraph() { avfilter_graph_free(&_fg); }

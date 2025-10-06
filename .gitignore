@@ -7,4 +7,4 @@ build
 *.mkv
 *.yuv
 *.h264
-examples
+c-api-examples
