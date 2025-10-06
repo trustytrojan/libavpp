@@ -84,7 +84,7 @@ void play_video(const char *const url)
 	av::SwScaler scaler{
 		{size.x, size.y, (AVPixelFormat)vstream->codecpar->format},
 		{size.x, size.y, AV_PIX_FMT_RGBA}};
-	av::Frame scaled_frame;
+	av::OwnedFrame scaled_frame;
 
 	// create sfml window, texture, and sprite
 	sf::RenderWindow window{

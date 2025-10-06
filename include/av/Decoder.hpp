@@ -57,7 +57,7 @@ public:
 	 * @warning **Do not free/delete the returned pointer.** It belongs to and
 	 * is managed by this class.
 	 */
-	const AVFrame *receive_frame()
+	AVFrame *receive_frame()
 	{
 		if (!_frm && !(_frm = av_frame_alloc()))
 			throw Error("av_frame_alloc", AVERROR(ENOMEM));

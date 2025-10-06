@@ -71,7 +71,7 @@ void cpp_main(
 	writer.write_header();
 	writer.print_info(0);
 
-	av::Frame sw_frame;
+	av::OwnedFrame sw_frame, hw_frame;
 	sw_frame->width = width;
 	sw_frame->height = height;
 	sw_frame->format = AV_PIX_FMT_NV12;
@@ -87,7 +87,7 @@ void cpp_main(
 
 		sw_frame->pts = frame_count++;
 
-		av::Frame hw_frame;
+		hw_frame.unref();
 		hwfctx.get_buffer(hw_frame);
 		hw_frame->pts = sw_frame->pts; // <<< THIS IS THE FIX
 		av::HWFramesContext::transfer_data(hw_frame, sw_frame);

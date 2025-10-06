@@ -76,18 +76,15 @@ public:
 	}
 
 	/**
-	 *
 	 * @param dst the destination frame. dst is not touched on failure.
 	 * @param src the source frame.
 	 * @param flags currently unused, should be set to zero
 	 * @throws `av::Error` if `av_hwframe_transfer_data` fails
 	 */
-	static void
-	transfer_data(const Frame &dst, const Frame &src, const int flags = 0)
+	static void transfer_data(
+		AVFrame *const dst, const AVFrame *const src, const int flags = 0)
 	{
-		if (const auto rc =
-				av_hwframe_transfer_data(dst.get(), src.get(), flags);
-			rc < 0)
+		if (const auto rc = av_hwframe_transfer_data(dst, src, flags); rc < 0)
 			throw Error("av_hwframe_transfer_data", rc);
 	}
 };

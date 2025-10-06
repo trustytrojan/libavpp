@@ -58,7 +58,7 @@ void cpp_main(
 	enc.set_hwframe_ctx(hwfctx);
 	enc.open();
 
-	av::Frame sw_frame;
+	av::OwnedFrame sw_frame, hw_frame;
 	sw_frame->width = width;
 	sw_frame->height = height;
 	sw_frame->format = AV_PIX_FMT_NV12;
@@ -72,9 +72,8 @@ void cpp_main(
 			break;
 
 		// Get a new hardware frame from the pool for each software frame.
-		av::Frame hw_frame;
+		hw_frame.unref();
 		hwfctx.get_buffer(hw_frame);
-
 		av::HWFramesContext::transfer_data(hw_frame, sw_frame);
 		enc.send_frame(hw_frame.get());
 

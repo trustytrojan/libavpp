@@ -20,7 +20,6 @@ endif()
 
 FetchContent_Declare(portaudio-pp URL https://github.com/trustytrojan/portaudio-pp/archive/main.zip)
 FetchContent_MakeAvailable(portaudio-pp)
-include_directories(${portaudio-pp_SOURCE_DIR}/include)
 
 if(WIN32)
 	link_libraries(portaudio_x64)
@@ -29,7 +28,7 @@ elseif(LINUX)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-link_libraries(libavpp SFML::Graphics)
+link_libraries(libavpp SFML::Graphics portaudio-pp::portaudio-pp)
 
 ## tests
 add_executable(audio-player audio-player.cpp)
@@ -38,3 +37,4 @@ add_executable(video-player video-player.cpp)
 add_executable(vaapi-encode vaapi-encode.cpp)
 add_executable(vaapi-encode-mux vaapi-encode-mux.cpp)
 add_executable(vaapi-transcode vaapi-transcode.cpp)
+add_executable(hw-decode hw-decode.cpp)
