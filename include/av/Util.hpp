@@ -19,14 +19,11 @@ inline const AVCodec *find_encoder_by_name(const char *const name)
 	throw Error("avcodec_find_encoder_by_name", AVERROR_ENCODER_NOT_FOUND);
 }
 
-inline void link_filters(
-	AVFilterContext *src,
-	unsigned src_pad,
-	AVFilterContext *dst,
-	unsigned dst_pad)
+inline const AVFilter *filter_get_by_name(const char *const name)
 {
-	if (const int rc = avfilter_link(src, src_pad, dst, dst_pad); rc < 0)
-		throw Error("avfilter_link", rc);
+	if (const auto filter = avfilter_get_by_name(name))
+		return filter;
+	throw Error("avfilter_get_by_name", AVERROR_FILTER_NOT_FOUND);
 }
 
 /**
@@ -39,18 +36,12 @@ class HWDeviceTypeIterator
 	AVHWDeviceType type;
 
 public:
-	using iterator_category = std::input_iterator_tag;
-	using value_type = AVHWDeviceType;
-	using difference_type = std::ptrdiff_t;
-	using pointer = const value_type *;
-	using reference = const value_type &;
-
 	HWDeviceTypeIterator(const AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE)
 		: type(type)
 	{
 	}
 
-	reference operator*() const { return type; }
+	AVHWDeviceType operator*() const { return type; }
 
 	HWDeviceTypeIterator &operator++()
 	{
@@ -58,21 +49,9 @@ public:
 		return *this;
 	}
 
-	HWDeviceTypeIterator operator++(int)
-	{
-		HWDeviceTypeIterator tmp = *this;
-		++(*this);
-		return tmp;
-	}
-
 	bool operator==(const HWDeviceTypeIterator &other) const
 	{
 		return type == other.type;
-	}
-
-	bool operator!=(const HWDeviceTypeIterator &other) const
-	{
-		return !(*this == other);
 	}
 };
 

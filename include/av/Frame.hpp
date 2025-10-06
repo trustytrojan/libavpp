@@ -12,8 +12,9 @@ namespace av
 {
 
 /**
- * Non-owning wrapper over an `AVFrame *`.
- * Eases usage of `av::Scaler`, `av::Resampler`, and `av_image_*` functions.
+ * Non-owning wrapper over an `AVFrame *`. Need to split up ownership
+ * responsibilities due to the nature of how often `AVFrame *` s are passed
+ * around and used as temporary variables in the C API examples.
  */
 class Frame
 {
@@ -27,7 +28,6 @@ public:
 	}
 
 	// Provide access to the underlying pointer
-	AVFrame *get() const { return _f; }
 	AVFrame *operator->() const { return _f; }
 	operator AVFrame *() const { return _f; }
 
@@ -68,8 +68,8 @@ public:
 };
 
 /**
- * Extension of Frame that owns its underlying AVFrame pointer.
- * Handles allocation and deallocation of the AVFrame.
+ * Extension of `Frame` that owns its underlying `AVFrame *`.
+ * Handles allocation and deallocation of the `AVFrame`.
  */
 class OwnedFrame : public Frame
 {
@@ -82,6 +82,10 @@ public:
 	}
 
 	~OwnedFrame() { av_frame_free(&_f); }
+
+	// Do NOT allow copying an owned frame!
+	OwnedFrame(const OwnedFrame &) = delete;
+	OwnedFrame &operator=(const OwnedFrame &) = delete;
 };
 
 } // namespace av

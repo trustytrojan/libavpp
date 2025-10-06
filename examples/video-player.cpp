@@ -7,7 +7,7 @@
 
 #include <av/Frame.hpp>
 #include <av/MediaReader.hpp>
-#include <av/SwScaler.hpp>
+#include <av/Scaler.hpp>
 
 // Copies a padded frame to a tightly-packed buffer and updates the texture.
 void update_texture_from_padded_frame(
@@ -81,7 +81,7 @@ void play_video(const char *const url)
 		vstream->codecpar->width, vstream->codecpar->height);
 
 	// create scaler to convert to rgba
-	av::SwScaler scaler{
+	av::Scaler scaler{
 		{size.x, size.y, (AVPixelFormat)vstream->codecpar->format},
 		{size.x, size.y, AV_PIX_FMT_RGBA}};
 	av::OwnedFrame scaled_frame;
@@ -106,8 +106,8 @@ void play_video(const char *const url)
 			vdecoder.send_packet(packet);
 			while (const auto frame = vdecoder.receive_frame())
 			{
-				scaler.scale_frame(scaled_frame.get(), frame);
-				update_texture_from_frame(texture, scaled_frame.get(), size);
+				scaler.scale_frame(scaled_frame, frame);
+				update_texture_from_frame(texture, scaled_frame, size);
 				window.draw(sprite);
 				window.display();
 			}

@@ -29,15 +29,7 @@ public:
 	 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by
 	 * `MediaReader`.
 	 */
-	AVStream *get() { return _s; }
-
-	/**
-	 * @return A read-only pointer to the contained `AVStream`.
-	 * @warning **Do not free/delete the returned pointer.**
-	 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by
-	 * `MediaReader`.
-	 */
-	const AVStream *get() const { return _s; }
+	operator AVStream *() const { return _s; }
 
 	/**
 	 * Access fields the contained `AVStream`.
@@ -46,16 +38,7 @@ public:
 	 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by
 	 * `MediaReader`.
 	 */
-	AVStream *operator->() { return _s; }
-
-	/**
-	 * Access fields the contained `AVStream`.
-	 * @return A read-only pointer to the contained `AVStream`.
-	 * @warning **Do not free/delete the returned pointer.**
-	 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by
-	 * `MediaReader`.
-	 */
-	const AVStream *operator->() const { return _s; }
+	AVStream *operator->() const { return _s; }
 
 	/**
 	 * Wrapper over `av_dict_get` using the contained `AVStream`'s `metadata`
@@ -120,7 +103,7 @@ public:
 	void copy_params(const CodecContext &cdctx)
 	{
 		if (const auto rc =
-				avcodec_parameters_from_context(_s->codecpar, cdctx.get());
+				avcodec_parameters_from_context(_s->codecpar, cdctx);
 			rc < 0)
 			throw Error("avcodec_parameters_from_context", rc);
 	}

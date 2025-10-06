@@ -75,7 +75,7 @@ void cpp_main(
 		hw_frame.unref();
 		hwfctx.get_buffer(hw_frame);
 		av::HWFramesContext::transfer_data(hw_frame, sw_frame);
-		enc.send_frame(hw_frame.get());
+		enc.send_frame(hw_frame);
 
 		while (const auto pkt = enc.receive_packet())
 		{

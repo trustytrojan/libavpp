@@ -33,6 +33,7 @@ link_libraries(libavpp SFML::Graphics portaudio-pp::portaudio-pp)
 ## tests
 add_executable(audio-player audio-player.cpp)
 add_executable(display-attached-pic display-attached-pic.cpp)
+add_executable(filter-audio filter-audio.cpp)
 add_executable(video-player video-player.cpp)
 add_executable(vaapi-encode vaapi-encode.cpp)
 add_executable(vaapi-encode-mux vaapi-encode-mux.cpp)

@@ -30,13 +30,13 @@ public:
 
 	~FilterGraph() { avfilter_graph_free(&_fg); }
 
-	AVFilterGraph *get() { return _fg; }
 	AVFilterGraph *operator->() { return _fg; }
+	operator AVFilterGraph *() { return _fg; }
 
-	FilterContext add_filter(
+	FilterContext create_filter(
 		const AVFilter *const filter,
 		const char *const name,
-		const char *const args = NULL)
+		const char *const args)
 	{
 		AVFilterContext *filter_ctx;
 		if (const int rc = avfilter_graph_create_filter(
@@ -46,15 +46,28 @@ public:
 		return filter_ctx;
 	}
 
-	void parse(const char *const filters)
+	FilterContext
+	alloc_filter(const AVFilter *const filter, const char *const name)
+	{
+		if (const auto filter_ctx =
+				avfilter_graph_alloc_filter(_fg, filter, name))
+			return filter_ctx;
+		throw Error("avfilter_graph_alloc_filter", AVERROR(ENOMEM));
+	}
+
+	struct ParseReturn
+	{
+		AVFilterInOut *const inputs, *const outputs;
+	};
+
+	ParseReturn parse(const char *const filters)
 	{
 		AVFilterInOut *inputs, *outputs;
 		if (const int rc =
 				avfilter_graph_parse2(_fg, filters, &inputs, &outputs);
 			rc < 0)
 			throw Error("avfilter_graph_parse2", rc);
-		avfilter_inout_free(&inputs);
-		avfilter_inout_free(&outputs);
+		return {inputs, outputs};
 	}
 
 	void configure()

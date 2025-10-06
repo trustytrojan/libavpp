@@ -68,7 +68,7 @@ public:
 	 */
 	void get_buffer(const Frame &frame, const int flags = 0)
 	{
-		if (const auto rc = av_hwframe_get_buffer(_ctx, frame.get(), flags);
+		if (const auto rc = av_hwframe_get_buffer(_ctx, frame, flags);
 			rc < 0)
 			throw Error("av_hwframe_get_buffer", rc);
 		if (!frame->hw_frames_ctx)

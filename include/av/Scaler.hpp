@@ -11,7 +11,7 @@ extern "C"
 namespace av
 {
 
-class SwScaler
+class Scaler
 {
 public:
 	struct SrcDstArgs
@@ -25,7 +25,7 @@ private:
 	SwsContext *const _ctx;
 
 public:
-	SwScaler(
+	Scaler(
 		const SrcDstArgs &src,
 		const SrcDstArgs &dst,
 		int flags = 0,
@@ -46,7 +46,7 @@ public:
 			throw Error("sws_getContext", AVERROR(ENOMEM));
 	}
 
-	~SwScaler() { sws_freeContext(_ctx); }
+	~Scaler() { sws_freeContext(_ctx); }
 
 	void scale_frame(AVFrame *const dst, const AVFrame *const src)
 	{

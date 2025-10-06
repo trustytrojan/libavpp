@@ -53,29 +53,8 @@ public:
 		return *this;
 	}
 
-	/**
-	 * Access the internal `AVCodecContext`.
-	 * @return A pointer to the internal `AVCodecContext`.
-	 * @warning Only modify what you need for calling `open`.
-	 */
-	AVCodecContext *operator->() { return _cdctx; }
-
-	/**
-	 * Access the internal `AVCodecContext`.
-	 * @return A read-only pointer to the internal `AVCodecContext`.
-	 */
-	const AVCodecContext *operator->() const { return _cdctx; }
-
-	/**
-	 * @return A pointer to the internal `AVCodecContext`.
-	 * @warning Only modify what you need for calling `open`.
-	 */
-	AVCodecContext *get() { return _cdctx; }
-
-	/**
-	 * @return A read-only pointer to the internal `AVCodecContext`.
-	 */
-	const AVCodecContext *get() const { return _cdctx; }
+	AVCodecContext *operator->() const { return _cdctx; }
+	operator AVCodecContext *() const  { return _cdctx; }
 
 	/**
 	 * Fill the codec context based on the values from the supplied codec
