@@ -1,3 +1,6 @@
+// SFML+portaudio-based media player with libavpp
+// only software decoding & scaling
+
 #include "util.cpp"
 #include <SFML/Graphics.hpp>
 #include <portaudio.hpp>

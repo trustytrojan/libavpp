@@ -1,3 +1,5 @@
+// shared utility functions for all examples
+
 #pragma once
 
 #include <cstdlib>

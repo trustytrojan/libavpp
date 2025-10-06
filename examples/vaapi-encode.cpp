@@ -1,4 +1,4 @@
-// translation of ffmpeg's vaapi-encode.c example to libavpp
+// translation of ffmpeg's vaapi_encode.c example to libavpp
 
 extern "C"
 {

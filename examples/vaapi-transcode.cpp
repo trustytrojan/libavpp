@@ -1,3 +1,5 @@
+// translation of ffmpeg's vaapi_transcode.c to libavpp
+
 #include "av/Util.hpp"
 #include <av/HWDeviceContext.hpp>
 #include <av/HWFramesContext.hpp>
