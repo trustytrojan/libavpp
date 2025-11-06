@@ -54,7 +54,7 @@ public:
 	}
 
 	AVCodecContext *operator->() const { return _cdctx; }
-	operator AVCodecContext *() const  { return _cdctx; }
+	operator AVCodecContext *() const { return _cdctx; }
 
 	/**
 	 * Fill the codec context based on the values from the supplied codec

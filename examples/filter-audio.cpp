@@ -42,51 +42,49 @@ constexpr int FRAME_SIZE = 1024;
 
 class FilterPipeline
 {
-public:
 	av::FilterGraph graph;
-	av::FilterContext src;
-	av::FilterContext sink;
+	av::FilterContext src, sink;
 
-	FilterPipeline()
-		: src{init_filter_graph()}, sink{init_sink()}
-	{
-		graph.configure();
-	}
-
-private:
-	AVFilterContext *init_filter_graph()
+	av::FilterContext setup_src()
 	{
 		// Create and configure the abuffer filter (source)
 		const AVFilter *abuffer = av::filter_get_by_name("abuffer");
-
-		av::FilterContext src_ctx = graph.alloc_filter(abuffer, "src");
+		src = graph.alloc_filter(abuffer, "src");
 
 		// Set abuffer options using AVOptions API
 		char ch_layout[64];
-		av_channel_layout_describe(&INPUT_CHANNEL_LAYOUT, ch_layout, sizeof(ch_layout));
-		src_ctx.opt_set("channel_layout", static_cast<const char *>(ch_layout));
-		src_ctx.opt_set("sample_fmt", av_get_sample_fmt_name(INPUT_FORMAT));
-		src_ctx.opt_set("time_base", AVRational{1, INPUT_SAMPLERATE});
-		src_ctx.opt_set("sample_rate", INPUT_SAMPLERATE);
+		av_channel_layout_describe(
+			&INPUT_CHANNEL_LAYOUT, ch_layout, sizeof(ch_layout));
+		src.opt_set("channel_layout", static_cast<const char *>(ch_layout));
+		src.opt_set("sample_fmt", av_get_sample_fmt_name(INPUT_FORMAT));
+		src.opt_set("time_base", AVRational{1, INPUT_SAMPLERATE});
+		src.opt_set("sample_rate", INPUT_SAMPLERATE);
+		src.init(static_cast<const char *>(nullptr));
 
-		// Initialize the abuffer filter
-		src_ctx.init(static_cast<const char *>(nullptr));
+		return src;
+	}
 
+	av::FilterContext setup_volume()
+	{
 		// Create and configure the volume filter
 		const AVFilter *volume = av::filter_get_by_name("volume");
-
-		av::FilterContext volume_ctx = graph.alloc_filter(volume, "volume");
+		auto volume_ctx = graph.alloc_filter(volume, "volume");
 
 		// Initialize volume filter with dictionary options
 		AVDictionary *options_dict = nullptr;
-		av_dict_set(&options_dict, "volume", std::to_string(VOLUME_VAL).c_str(), 0);
+		av_dict_set(
+			&options_dict, "volume", std::to_string(VOLUME_VAL).c_str(), 0);
 		volume_ctx.init(&options_dict);
 		av_dict_free(&options_dict);
 
+		return volume_ctx;
+	}
+
+	av::FilterContext setup_format()
+	{
 		// Create and configure the aformat filter
 		const AVFilter *aformat = av::filter_get_by_name("aformat");
-
-		av::FilterContext aformat_ctx = graph.alloc_filter(aformat, "aformat");
+		auto aformat_ctx = graph.alloc_filter(aformat, "aformat");
 
 		// Initialize aformat filter with string options
 		char options_str[1024];
@@ -98,31 +96,43 @@ private:
 			44100);
 		aformat_ctx.init(static_cast<const char *>(options_str));
 
+		return aformat_ctx;
+	}
+
+	av::FilterContext setup_sink()
+	{
 		// Create the abuffersink filter (sink)
 		const AVFilter *abuffersink = av::filter_get_by_name("abuffersink");
+		auto sink = graph.alloc_filter(abuffersink, "sink");
+		sink.init(static_cast<const char *>(nullptr));
+		return sink;
+	}
 
-		av::FilterContext sink_ctx = graph.alloc_filter(abuffersink, "sink");
-
-		// Initialize the abuffersink filter
-		sink_ctx.init(static_cast<const char *>(nullptr));
+public:
+	FilterPipeline()
+	{
+		// Setup filters separately
+		src = setup_src();
+		auto volume_ctx = setup_volume();
+		auto aformat_ctx = setup_format();
+		sink = setup_sink();
 
 		// Link the filters together
-		src_ctx.link(0, volume_ctx, 0);
-		volume_ctx.link(0, aformat_ctx, 0);
-		aformat_ctx.link(0, sink_ctx, 0);
+		src >> volume_ctx >> aformat_ctx >> sink;
 
-		// Store sink for later use (ugly but necessary due to initialization order)
-		_sink = sink_ctx;
-
-		return src_ctx;
+		// Finalize graph
+		graph.configure();
 	}
 
-	AVFilterContext *init_sink()
+	void operator<<(AVFrame *frame)
 	{
-		return _sink;
+		src.add_frame(frame);
 	}
 
-	AVFilterContext *_sink = nullptr;
+	void operator>>(AVFrame *frame)
+	{
+		sink.get_frame(frame);
+	}
 };
 
 void process_output(AVMD5 *md5, av::Frame &frame)
@@ -166,7 +176,8 @@ void generate_sine_wave(av::Frame &frame, int frame_num)
 	{
 		float *data = reinterpret_cast<float *>(frame->extended_data[i]);
 		for (int j = 0; j < frame->nb_samples; ++j)
-			data[j] = std::sin(2 * M_PI * (frame_num + j) * (i + 1) / FRAME_SIZE);
+			data[j] =
+				std::sin(2 * M_PI * (frame_num + j) * (i + 1) / FRAME_SIZE);
 	}
 }
 
@@ -204,14 +215,14 @@ int main(int argc, char *argv[])
 			generate_sine_wave(frame, i);
 
 			// Send frame to the filter graph
-			pipeline.src.add_frame(frame);
+			pipeline << frame;
 
 			// Get all filtered output that is available
 			while (true)
 			{
 				try
 				{
-					pipeline.sink.get_frame(frame);
+					pipeline >> frame;
 					process_output(md5, frame);
 					frame.unref();
 				}

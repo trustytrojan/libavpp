@@ -18,10 +18,10 @@ namespace av
  */
 class FilterContext
 {
-	AVFilterContext *const ctx;
+	AVFilterContext *ctx;
 
 public:
-	FilterContext(AVFilterContext *const ctx)
+	FilterContext(AVFilterContext *const ctx = nullptr)
 		: ctx{ctx}
 	{
 	}
@@ -29,12 +29,14 @@ public:
 	AVFilterContext *operator->() { return ctx; }
 	operator AVFilterContext *() { return ctx; }
 
+	// ONLY USE THIS IF WE ARE buffer/abuffer!
 	void add_frame(AVFrame *const frame)
 	{
 		if (const int rc = av_buffersrc_add_frame(ctx, frame); rc < 0)
 			throw Error("av_buffersrc_add_frame", rc);
 	}
 
+	// ONLY USE THIS IF WE ARE buffersink/abuffersink!
 	void get_frame(AVFrame *const frame)
 	{
 		if (const int rc = av_buffersink_get_frame(ctx, frame); rc < 0)
@@ -87,6 +89,7 @@ public:
 			throw Error("av_opt_set", rc);
 	}
 
+	// NOTE: Pads are a general term for the inputs/outputs of a filter.
 	void link(
 		const unsigned src_pad,
 		AVFilterContext *const dst,
@@ -94,6 +97,16 @@ public:
 	{
 		if (const int rc = avfilter_link(ctx, src_pad, dst, dst_pad); rc < 0)
 			throw Error("avfilter_link", rc);
+	}
+
+	/**
+	 * Link this filter to `dst`, using pad index 0 for our sink and `dst` 's source.
+	 * @returns `dst`, so that you can chain this operator with the next filter.
+	 */
+	av::FilterContext operator>>(AVFilterContext *const dst)
+	{
+		link(0, dst, 0);
+		return dst;
 	}
 };
 

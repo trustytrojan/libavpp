@@ -12,9 +12,11 @@ namespace av
 {
 
 /**
- * Non-owning wrapper over an `AVFrame *`. Need to split up ownership
- * responsibilities due to the nature of how often `AVFrame *` s are passed
- * around and used as temporary variables in the C API examples.
+ * Non-owning wrapper class for an `AVFrame *`.
+ * @note I needed to split up ownership responsibilities due to the nature of
+ * how often `AVFrame *` s are passed around and used as temporary variables in
+ * the C API examples.
+ * @see `av::Stream`
  */
 class Frame
 {
@@ -68,8 +70,7 @@ public:
 };
 
 /**
- * Extension of `Frame` that owns its underlying `AVFrame *`.
- * Handles allocation and deallocation of the `AVFrame`.
+ * Extension of `Frame` that allocates and then owns its underlying `AVFrame *`.
  */
 class OwnedFrame : public Frame
 {

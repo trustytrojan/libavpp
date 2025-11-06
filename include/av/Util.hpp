@@ -27,40 +27,11 @@ inline const AVFilter *filter_get_by_name(const char *const name)
 }
 
 /**
- * An iterator for `av_hwdevice_iterate_types`.
- * Allows for using a range-based for loop to iterate over available hardware
- * device types.
- */
-class HWDeviceTypeIterator
-{
-	AVHWDeviceType type;
-
-public:
-	HWDeviceTypeIterator(const AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE)
-		: type(type)
-	{
-	}
-
-	AVHWDeviceType operator*() const { return type; }
-
-	HWDeviceTypeIterator &operator++()
-	{
-		type = av_hwdevice_iterate_types(type);
-		return *this;
-	}
-
-	bool operator==(const HWDeviceTypeIterator &other) const
-	{
-		return type == other.type;
-	}
-};
-
-/**
  * A range-based for loop compatible wrapper for `av_hwdevice_iterate_types`.
  *
  * Example usage:
  * @code
- * for (const auto type : av::for_each_hwdevice_type())
+ * for (const auto type : av::HWDeviceTypes{})
  * {
  *     std::cout << av_hwdevice_get_type_name(type) << '\n';
  * }
@@ -68,13 +39,37 @@ public:
  */
 class HWDeviceTypes
 {
-public:
-	HWDeviceTypeIterator begin() const
+	class Iterator
 	{
-		return HWDeviceTypeIterator{
-			av_hwdevice_iterate_types(AV_HWDEVICE_TYPE_NONE)};
+		AVHWDeviceType type;
+
+	public:
+		Iterator(const AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE)
+			: type(type)
+		{
+		}
+
+		AVHWDeviceType operator*() const { return type; }
+
+		Iterator &operator++()
+		{
+			type = av_hwdevice_iterate_types(type);
+			return *this;
+		}
+
+		bool operator==(const Iterator &other) const
+		{
+			return type == other.type;
+		}
+	};
+
+public:
+	Iterator begin() const
+	{
+		return Iterator{av_hwdevice_iterate_types(AV_HWDEVICE_TYPE_NONE)};
 	}
-	HWDeviceTypeIterator end() const { return HWDeviceTypeIterator{}; }
+
+	Iterator end() const { return Iterator{}; }
 };
 
 } // namespace av

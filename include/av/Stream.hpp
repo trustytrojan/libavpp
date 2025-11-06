@@ -11,7 +11,11 @@ extern "C"
 namespace av
 {
 
-// Non-owning wrapper class over an `AVStream`.
+/**
+ * Non-owning wrapper class for an `AVStream *`.
+ * Must be non-owning because streams are always owned by a `FormatContext`, not
+ * by the caller.
+ */
 class Stream
 {
 	// the pointer must be non-const to keep the class copyable
@@ -32,7 +36,7 @@ public:
 	operator AVStream *() const { return _s; }
 
 	/**
-	 * Access fields the contained `AVStream`.
+	 * Access fields in the contained `AVStream`.
 	 * @return A pointer to the contained `AVStream`.
 	 * @warning **Do not free/delete the returned pointer.**
 	 * It belongs to and is managed by an `AVFormatContext`, which is wrapped by
