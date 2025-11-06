@@ -1,5 +1,6 @@
 #pragma once
 
+#include "av/HWDeviceContext.hpp"
 extern "C"
 {
 #include <libavcodec/avcodec.h>
@@ -90,7 +91,7 @@ public:
 
 	void set_hwdevice_ctx(const HWDeviceContext &hwdctx)
 	{
-		if (!(_cdctx->hw_device_ctx = av_buffer_ref(hwdctx.get_ref())))
+		if (!(_cdctx->hw_device_ctx = av_buffer_ref(hwdctx)))
 			throw Error("av_buffer_ref", AVERROR(ENOMEM));
 	}
 
@@ -101,7 +102,7 @@ public:
 	 */
 	void set_hwframe_ctx(const HWFramesContext &hwfctx)
 	{
-		if (!(_cdctx->hw_frames_ctx = av_buffer_ref(hwfctx.get_ref())))
+		if (!(_cdctx->hw_frames_ctx = av_buffer_ref(hwfctx)))
 			throw Error("av_buffer_ref", AVERROR(ENOMEM));
 	}
 };

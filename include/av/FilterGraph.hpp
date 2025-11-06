@@ -7,6 +7,7 @@ extern "C"
 #include <libavfilter/buffersrc.h>
 }
 
+#include "BufferSrc.hpp"
 #include "Error.hpp"
 #include "FilterContext.hpp"
 
@@ -53,6 +54,13 @@ public:
 				avfilter_graph_alloc_filter(_fg, filter, name))
 			return filter_ctx;
 		throw Error("avfilter_graph_alloc_filter", AVERROR(ENOMEM));
+	}
+
+	BufferSrc alloc_buffersrc(const char *const name, bool audio)
+	{
+		const auto filter = audio ? avfilter_get_by_name("abuffer")
+								  : avfilter_get_by_name("buffer");
+		return (AVFilterContext *)alloc_filter(filter, name);
 	}
 
 	struct ParseReturn

@@ -43,13 +43,13 @@ constexpr int FRAME_SIZE = 1024;
 class FilterPipeline
 {
 	av::FilterGraph graph;
-	av::FilterContext src, sink;
+	av::BufferSrc src;
+	av::FilterContext sink;
 
-	av::FilterContext setup_src()
+	void setup_src()
 	{
 		// Create and configure the abuffer filter (source)
-		const AVFilter *abuffer = av::filter_get_by_name("abuffer");
-		src = graph.alloc_filter(abuffer, "src");
+		src = graph.alloc_buffersrc("src", true);
 
 		// Set abuffer options using AVOptions API
 		char ch_layout[64];
@@ -60,8 +60,6 @@ class FilterPipeline
 		src.opt_set("time_base", AVRational{1, INPUT_SAMPLERATE});
 		src.opt_set("sample_rate", INPUT_SAMPLERATE);
 		src.init(static_cast<const char *>(nullptr));
-
-		return src;
 	}
 
 	av::FilterContext setup_volume()
@@ -99,23 +97,22 @@ class FilterPipeline
 		return aformat_ctx;
 	}
 
-	av::FilterContext setup_sink()
+	void setup_sink()
 	{
 		// Create the abuffersink filter (sink)
 		const AVFilter *abuffersink = av::filter_get_by_name("abuffersink");
-		auto sink = graph.alloc_filter(abuffersink, "sink");
+		sink = graph.alloc_filter(abuffersink, "sink");
 		sink.init(static_cast<const char *>(nullptr));
-		return sink;
 	}
 
 public:
 	FilterPipeline()
 	{
 		// Setup filters separately
-		src = setup_src();
+		setup_src();
 		auto volume_ctx = setup_volume();
 		auto aformat_ctx = setup_format();
-		sink = setup_sink();
+		setup_sink();
 
 		// Link the filters together
 		src >> volume_ctx >> aformat_ctx >> sink;
@@ -124,15 +121,8 @@ public:
 		graph.configure();
 	}
 
-	void operator<<(AVFrame *frame)
-	{
-		src.add_frame(frame);
-	}
-
-	void operator>>(AVFrame *frame)
-	{
-		sink.get_frame(frame);
-	}
+	void operator<<(AVFrame *frame) { src.add_frame(frame); }
+	void operator>>(AVFrame *frame) { sink.get_frame(frame); }
 };
 
 void process_output(AVMD5 *md5, av::Frame &frame)
