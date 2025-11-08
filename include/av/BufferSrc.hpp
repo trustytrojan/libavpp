@@ -40,13 +40,6 @@ struct BufferSrc : FilterContext
 		validate_is_buffersrc(c);
 	}
 
-	BufferSrc &operator=(AVFilterContext *c)
-	{
-		validate_is_buffersrc(c);
-		ctx = c;
-		return *this;
-	}
-
 	void add_frame(AVFrame *const frame)
 	{
 		if (const int rc = av_buffersrc_add_frame(ctx, frame); rc < 0)
@@ -62,7 +55,7 @@ struct BufferSrc : FilterContext
 	void operator<<(AVFrame *const frame) { add_frame(frame); }
 
 private:
-	static void validate_is_buffersrc(AVFilterContext *c)
+	static void validate_is_buffersrc(const AVFilterContext *const c)
 	{
 		static const auto buffer = avfilter_get_by_name("buffer"),
 						  abuffer = avfilter_get_by_name("abuffer");

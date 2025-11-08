@@ -13,12 +13,10 @@
 
 extern "C"
 {
-#include <errno.h>
 #include <libavutil/hwcontext.h>
-#include <stdio.h>
-#include <string.h>
 }
 
+#include <av/BufferSink.hpp>
 #include <av/BufferSrc.hpp>
 #include <av/FilterContext.hpp>
 #include <av/FilterGraph.hpp>
@@ -27,56 +25,14 @@ extern "C"
 #include <av/HWFramesContext.hpp>
 #include <av/Util.hpp>
 
+#include <format>
+#include <iostream>
+
 class ScalingPipeline
 {
 	av::FilterGraph graph;
 	av::BufferSrc src;
-	av::FilterContext sink;
-	av::HWFramesContext &in_hwfctx;
-
-	void
-	setup_src(const int width, const int height, AVBufferRef *hw_frames_ctx)
-	{
-		// Create and configure the buffer filter (source)
-		src = graph.alloc_buffersrc("src", false);
-
-		// Set buffer options
-		char size_str[64];
-		snprintf(size_str, sizeof(size_str), "%d:%d", width, height);
-		src.opt_set("video_size", static_cast<const char *>(size_str));
-		src.opt_set("pix_fmt", static_cast<int64_t>(AV_PIX_FMT_VAAPI));
-		src.opt_set("time_base", AVRational{1, 25});
-
-		// Set the hardware frames context for the input BEFORE init using
-		// parameters
-		av::BufferSrc::Parameters params;
-		params->hw_frames_ctx = av_buffer_ref(hw_frames_ctx);
-		src.parameters_set(params);
-
-		src.init(static_cast<const char *>(nullptr));
-	}
-
-	av::FilterContext setup_scale(const int out_width, const int out_height)
-	{
-		// Create and configure the scale_vaapi filter
-		const AVFilter *scale = av::filter_get_by_name("scale_vaapi");
-		auto scale_ctx = graph.alloc_filter(scale, "scale");
-
-		// Initialize with options string format "w=1280:h=720"
-		char options[128];
-		snprintf(options, sizeof(options), "w=%d:h=%d", out_width, out_height);
-		scale_ctx.init(static_cast<const char *>(options));
-
-		return scale_ctx;
-	}
-
-	void setup_sink()
-	{
-		// Create the buffersink filter (sink)
-		const AVFilter *buffersink = av::filter_get_by_name("buffersink");
-		sink = graph.alloc_filter(buffersink, "sink");
-		sink.init(static_cast<const char *>(nullptr));
-	}
+	av::BufferSink sink;
 
 public:
 	ScalingPipeline(
@@ -85,17 +41,31 @@ public:
 		const int in_height,
 		const int out_width,
 		const int out_height)
-		: in_hwfctx{in_hwfctx}
 	{
-		// Setup filters
-		setup_src(in_width, in_height, in_hwfctx);
-		auto scale_ctx = setup_scale(out_width, out_height);
-		setup_sink();
+		src = (AVFilterContext *)graph.alloc_filter("buffer", "src");
 
-		// Link the filters together
+		// Set the hardware frames context for the input BEFORE init
+		av::BufferSrc::Parameters params;
+		params->hw_frames_ctx = av_buffer_ref(in_hwfctx);
+		src.parameters_set(params);
+
+		const auto src_init_str = std::format(
+			"video_size={}x{}:pix_fmt=vaapi:time_base=1/25",
+			in_width,
+			in_height);
+		std::cout << src_init_str << '\n';
+		src.init(src_init_str.c_str());
+
+		auto scale_ctx = graph.create_filter(
+			"scale_vaapi",
+			"scale",
+			std::format("{}:{}", out_width, out_height).c_str());
+
+		sink = (AVFilterContext *)graph.create_filter("buffersink", "sink");
+
+		// Link filters together
 		src >> scale_ctx >> sink;
 
-		// Finalize graph
 		graph.configure();
 	}
 

@@ -3,13 +3,11 @@
 extern "C"
 {
 #include <libavfilter/avfilter.h>
-#include <libavfilter/buffersink.h>
-#include <libavfilter/buffersrc.h>
 }
 
-#include "BufferSrc.hpp"
 #include "Error.hpp"
 #include "FilterContext.hpp"
+#include "Util.hpp"
 
 namespace av
 {
@@ -20,13 +18,20 @@ namespace av
 class FilterGraph
 {
 private:
-	AVFilterGraph *_fg = nullptr;
+	AVFilterGraph *_fg{};
 
 public:
 	FilterGraph()
 	{
 		if (!(_fg = avfilter_graph_alloc()))
 			throw Error("avfilter_graph_alloc", AVERROR(ENOMEM));
+	}
+
+	FilterGraph(const char *const filters)
+		: FilterGraph{}
+	{
+		(void)parse(filters);
+		configure();
 	}
 
 	~FilterGraph() { avfilter_graph_free(&_fg); }
@@ -37,14 +42,22 @@ public:
 	FilterContext create_filter(
 		const AVFilter *const filter,
 		const char *const name,
-		const char *const args)
+		const char *const args = {})
 	{
 		AVFilterContext *filter_ctx;
 		if (const int rc = avfilter_graph_create_filter(
-				&filter_ctx, filter, name, args, NULL, _fg);
+				&filter_ctx, filter, name, args, {}, _fg);
 			rc < 0)
 			throw Error("avfilter_graph_create_filter", rc);
 		return filter_ctx;
+	}
+
+	FilterContext create_filter(
+		const char *const filter,
+		const char *const name,
+		const char *const args = {})
+	{
+		return create_filter(av::get_filter_by_name(filter), name, args);
 	}
 
 	FilterContext
@@ -56,19 +69,22 @@ public:
 		throw Error("avfilter_graph_alloc_filter", AVERROR(ENOMEM));
 	}
 
-	BufferSrc alloc_buffersrc(const char *const name, bool audio)
+	FilterContext alloc_filter(const char *const filter, const char *const name)
 	{
-		const auto filter = audio ? avfilter_get_by_name("abuffer")
-								  : avfilter_get_by_name("buffer");
-		return (AVFilterContext *)alloc_filter(filter, name);
+		return alloc_filter(av::get_filter_by_name(filter), name);
 	}
 
 	struct ParseReturn
 	{
-		AVFilterInOut *const inputs, *const outputs;
+		AVFilterInOut *inputs, *outputs;
+		~ParseReturn()
+		{
+			avfilter_inout_free(&inputs);
+			avfilter_inout_free(&outputs);
+		}
 	};
 
-	ParseReturn parse(const char *const filters)
+	[[nodiscard]] ParseReturn parse(const char *const filters)
 	{
 		AVFilterInOut *inputs, *outputs;
 		if (const int rc =

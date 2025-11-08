@@ -30,12 +30,7 @@ public:
 	AVFilterContext *operator->() { return ctx; }
 	operator AVFilterContext *() { return ctx; }
 
-	// ONLY USE THIS IF WE ARE buffersink/abuffersink!
-	void get_frame(AVFrame *const frame)
-	{
-		if (const int rc = av_buffersink_get_frame(ctx, frame); rc < 0)
-			throw Error("av_buffersink_get_frame", rc);
-	}
+	void init() { init<const char *>(nullptr); }
 
 	template <typename T>
 	void init(const T args)
@@ -87,7 +82,8 @@ private:
 		else
 			static_assert(
 				sizeof(T) == 0,
-				"Unsupported type for init: use const char* or AVDictionary**");
+				"Unsupported type for init: use const char * or AVDictionary "
+				"**");
 	}
 
 	template <typename T>

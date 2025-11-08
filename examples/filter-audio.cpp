@@ -9,10 +9,15 @@
  * (input) -> abuffer -> volume -> aformat -> abuffersink -> (output)
  *
  * Based on FFmpeg's filter_audio.c example, rewritten to use libavpp C++ API.
+ *
+ * This code also demonstrates the many different ways to configure a filter
+ * context before initializing it.
  */
 
 #define __STDC_CONSTANT_MACROS
 
+#include <av/BufferSink.hpp>
+#include <av/BufferSrc.hpp>
 #include <av/Error.hpp>
 #include <av/FilterContext.hpp>
 #include <av/FilterGraph.hpp>
@@ -29,7 +34,6 @@ extern "C"
 }
 
 #include <cmath>
-#include <cstdio>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
@@ -44,12 +48,12 @@ class FilterPipeline
 {
 	av::FilterGraph graph;
 	av::BufferSrc src;
-	av::FilterContext sink;
+	av::BufferSink sink;
 
 	void setup_src()
 	{
 		// Create and configure the abuffer filter (source)
-		src = graph.alloc_buffersrc("src", true);
+		src = (AVFilterContext *)graph.alloc_filter("abuffer", "src");
 
 		// Set abuffer options using AVOptions API
 		char ch_layout[64];
@@ -59,17 +63,17 @@ class FilterPipeline
 		src.opt_set("sample_fmt", av_get_sample_fmt_name(INPUT_FORMAT));
 		src.opt_set("time_base", AVRational{1, INPUT_SAMPLERATE});
 		src.opt_set("sample_rate", INPUT_SAMPLERATE);
-		src.init(static_cast<const char *>(nullptr));
+		src.init();
 	}
 
 	av::FilterContext setup_volume()
 	{
 		// Create and configure the volume filter
-		const AVFilter *volume = av::filter_get_by_name("volume");
+		const AVFilter *volume = av::get_filter_by_name("volume");
 		auto volume_ctx = graph.alloc_filter(volume, "volume");
 
 		// Initialize volume filter with dictionary options
-		AVDictionary *options_dict = nullptr;
+		AVDictionary *options_dict{};
 		av_dict_set(
 			&options_dict, "volume", std::to_string(VOLUME_VAL).c_str(), 0);
 		volume_ctx.init(&options_dict);
@@ -81,28 +85,14 @@ class FilterPipeline
 	av::FilterContext setup_format()
 	{
 		// Create and configure the aformat filter
-		const AVFilter *aformat = av::filter_get_by_name("aformat");
+		const AVFilter *aformat = av::get_filter_by_name("aformat");
 		auto aformat_ctx = graph.alloc_filter(aformat, "aformat");
 
 		// Initialize aformat filter with string options
-		char options_str[1024];
-		snprintf(
-			options_str,
-			sizeof(options_str),
-			"sample_fmts=%s:sample_rates=%d:channel_layouts=stereo",
-			av_get_sample_fmt_name(AV_SAMPLE_FMT_S16),
-			44100);
-		aformat_ctx.init(static_cast<const char *>(options_str));
+		aformat_ctx.init(
+			"sample_fmts=s16:sample_rates=44100:channel_layouts=stereo");
 
 		return aformat_ctx;
-	}
-
-	void setup_sink()
-	{
-		// Create the abuffersink filter (sink)
-		const AVFilter *abuffersink = av::filter_get_by_name("abuffersink");
-		sink = graph.alloc_filter(abuffersink, "sink");
-		sink.init(static_cast<const char *>(nullptr));
 	}
 
 public:
@@ -112,7 +102,7 @@ public:
 		setup_src();
 		auto volume_ctx = setup_volume();
 		auto aformat_ctx = setup_format();
-		setup_sink();
+		sink = (AVFilterContext *)graph.create_filter("abuffersink", "sink");
 
 		// Link the filters together
 		src >> volume_ctx >> aformat_ctx >> sink;
