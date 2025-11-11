@@ -49,12 +49,12 @@ public:
 		params->hw_frames_ctx = av_buffer_ref(in_hwfctx);
 		src.parameters_set(params);
 
-		const auto src_init_str = std::format(
-			"video_size={}x{}:pix_fmt=vaapi:time_base=1/25",
-			in_width,
-			in_height);
-		std::cout << src_init_str << '\n';
-		src.init(src_init_str.c_str());
+		src.init(
+			std::format(
+				"video_size={}x{}:pix_fmt=vaapi:time_base=1/25",
+				in_width,
+				in_height)
+				.c_str());
 
 		auto scale_ctx = graph.create_filter(
 			"scale_vaapi",
