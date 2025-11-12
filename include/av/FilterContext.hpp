@@ -18,10 +18,11 @@ namespace av
  */
 class FilterContext
 {
+protected:
 	AVFilterContext *ctx;
 
 public:
-	FilterContext(AVFilterContext *const ctx = nullptr)
+	FilterContext(AVFilterContext *const ctx = {})
 		: ctx{ctx}
 	{
 	}
@@ -29,48 +30,8 @@ public:
 	AVFilterContext *operator->() { return ctx; }
 	operator AVFilterContext *() { return ctx; }
 
-	// ONLY USE THIS IF WE ARE buffer/abuffer!
-	void add_frame(AVFrame *const frame)
-	{
-		if (const int rc = av_buffersrc_add_frame(ctx, frame); rc < 0)
-			throw Error("av_buffersrc_add_frame", rc);
-	}
+	void init() { init<const char *>(nullptr); }
 
-	// ONLY USE THIS IF WE ARE buffersink/abuffersink!
-	void get_frame(AVFrame *const frame)
-	{
-		if (const int rc = av_buffersink_get_frame(ctx, frame); rc < 0)
-			throw Error("av_buffersink_get_frame", rc);
-	}
-
-private:
-	template <typename T>
-	static constexpr auto get_init_func()
-	{
-		if constexpr (std::is_same_v<T, const char *>)
-			return avfilter_init_str;
-		else if constexpr (std::is_same_v<T, AVDictionary **>)
-			return avfilter_init_dict;
-		else
-			static_assert(
-				sizeof(T) == 0,
-				"Unsupported type for init: use const char* or AVDictionary**");
-	}
-
-	template <typename T>
-	static constexpr auto get_opt_set_func()
-	{
-		if constexpr (std::is_same_v<T, const char *>)
-			return av_opt_set;
-		else if constexpr (std::is_same_v<T, int64_t> || std::is_integral_v<T>)
-			return av_opt_set_int;
-		else if constexpr (std::is_same_v<T, AVRational>)
-			return av_opt_set_q;
-		else
-			static_assert(sizeof(T) == 0, "Unsupported type for opt_set");
-	}
-
-public:
 	template <typename T>
 	void init(const T args)
 	{
@@ -100,13 +61,42 @@ public:
 	}
 
 	/**
-	 * Link this filter to `dst`, using pad index 0 for our sink and `dst` 's source.
+	 * Link this filter to `dst`, using pad index 0 for our sink and `dst` 's
+	 * source.
 	 * @returns `dst`, so that you can chain this operator with the next filter.
 	 */
 	av::FilterContext operator>>(AVFilterContext *const dst)
 	{
 		link(0, dst, 0);
 		return dst;
+	}
+
+private:
+	template <typename T>
+	static constexpr auto get_init_func()
+	{
+		if constexpr (std::is_same_v<T, const char *>)
+			return avfilter_init_str;
+		else if constexpr (std::is_same_v<T, AVDictionary **>)
+			return avfilter_init_dict;
+		else
+			static_assert(
+				sizeof(T) == 0,
+				"Unsupported type for init: use const char * or AVDictionary "
+				"**");
+	}
+
+	template <typename T>
+	static constexpr auto get_opt_set_func()
+	{
+		if constexpr (std::is_same_v<T, const char *>)
+			return av_opt_set;
+		else if constexpr (std::is_same_v<T, int64_t> || std::is_integral_v<T>)
+			return av_opt_set_int;
+		else if constexpr (std::is_same_v<T, AVRational>)
+			return av_opt_set_q;
+		else
+			static_assert(sizeof(T) == 0, "Unsupported type for opt_set");
 	}
 };
 

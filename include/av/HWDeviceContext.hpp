@@ -11,7 +11,7 @@ namespace av
 {
 
 /**
- * Holds a reference to an AVHWDeviceContext.
+ * Owned wrapper of an `AVBufferRef *` representing an `AVHWDeviceContext`.
  */
 class HWDeviceContext
 {
@@ -32,7 +32,7 @@ public:
 
 	~HWDeviceContext() { av_buffer_unref(&_ctx); }
 
-	AVBufferRef *get_ref() const { return _ctx; }
+	operator AVBufferRef *() const { return _ctx; }
 };
 
 } // namespace av

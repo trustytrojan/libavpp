@@ -7,11 +7,13 @@ extern "C"
 
 #include "Error.hpp"
 #include "Frame.hpp"
-#include "HWDeviceContext.hpp"
 
 namespace av
 {
 
+/**
+ * Owned wrapper of an `AVBufferRef *` representing an `AVHWFramesContext`.
+ */
 class HWFramesContext
 {
 	AVBufferRef *_ctx{};
@@ -39,26 +41,9 @@ public:
 			throw Error("av_hwframe_ctx_init", rc);
 	}
 
-	HWFramesContext(
-		const HWDeviceContext &devctx,
-		const AVPixelFormat format,
-		const AVPixelFormat sw_format,
-		const int width,
-		const int height,
-		const int initial_pool_size = 20)
-		: HWFramesContext{
-			  devctx.get_ref(),
-			  format,
-			  sw_format,
-			  width,
-			  height,
-			  initial_pool_size}
-	{
-	}
-
 	~HWFramesContext() { av_buffer_unref(&_ctx); }
 
-	AVBufferRef *get_ref() const { return _ctx; }
+	operator AVBufferRef *() const { return _ctx; }
 
 	/**
 	 * Similar to `Frame::get_buffer`, gets a hardware-accelerated (aka on the

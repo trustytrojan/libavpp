@@ -19,7 +19,7 @@ inline const AVCodec *find_encoder_by_name(const char *const name)
 	throw Error("avcodec_find_encoder_by_name", AVERROR_ENCODER_NOT_FOUND);
 }
 
-inline const AVFilter *filter_get_by_name(const char *const name)
+inline const AVFilter *get_filter_by_name(const char *const name)
 {
 	if (const auto filter = avfilter_get_by_name(name))
 		return filter;
