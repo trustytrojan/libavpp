@@ -91,13 +91,13 @@ void vaapi_scale(
 		out_width,
 		out_height);
 
-	if (!(fin = fopen(inpath, "r")))
+	if (!(fin = fopen(inpath, "rb")))
 	{
 		fprintf(stderr, "Failed to open input file: %s\n", strerror(errno));
 		throw;
 	}
 
-	if (!(fout = fopen(outpath, "w+b")))
+	if (!(fout = fopen(outpath, "wb")))
 	{
 		fprintf(stderr, "Failed to open output file: %s\n", strerror(errno));
 		fclose(fin);
@@ -131,6 +131,40 @@ void vaapi_scale(
 	sw_out_frame.get_buffer();
 
 	int frame_count = 0;
+
+	const auto get_filtered_output = [&]
+	{
+		try
+		{
+			pipeline >> hw_out_frame;
+
+			// Transfer hardware frame back to software
+			av::HWFramesContext::transfer_data(sw_out_frame, hw_out_frame);
+
+			// Write NV12 data to output file
+			if (fwrite(sw_out_frame->data[0], 1, out_size, fout) != out_size)
+			{
+				fprintf(stderr, "Failed to write Y plane\n");
+				throw;
+			}
+
+			if (fwrite(sw_out_frame->data[1], 1, out_size / 2, fout) !=
+				out_size / 2)
+			{
+				fprintf(stderr, "Failed to write UV plane\n");
+				throw;
+			}
+
+			frame_count++;
+			hw_out_frame.unref();
+		}
+		catch (const av::Error &e)
+		{
+			if (e.errnum != AVERROR_EOF)
+				throw;
+		}
+	};
+
 	while (true)
 	{
 		// Read NV12 data from input file
@@ -147,84 +181,13 @@ void vaapi_scale(
 		// Send frame to the filter graph
 		pipeline << hw_in_frame;
 
-		// Get filtered output
-		try
-		{
-			pipeline >> hw_out_frame;
-
-			// Transfer hardware frame back to software
-			av::HWFramesContext::transfer_data(sw_out_frame, hw_out_frame);
-
-			// Write NV12 data to output file
-			if (fwrite(sw_out_frame->data[0], 1, out_size, fout) != out_size)
-			{
-				fprintf(stderr, "Failed to write Y plane\n");
-				throw;
-			}
-			if (fwrite(sw_out_frame->data[1], 1, out_size / 2, fout) !=
-				out_size / 2)
-			{
-				fprintf(stderr, "Failed to write UV plane\n");
-				throw;
-			}
-
-			frame_count++;
-			hw_out_frame.unref();
-		}
-		catch (const av::Error &e)
-		{
-			if (e.errnum == AVERROR(EAGAIN))
-			{
-				// Need to feed more frames
-				continue;
-			}
-			else
-			{
-				throw;
-			}
-		}
+		get_filtered_output();
 	}
 
 	// Flush the filter graph
 	pipeline << nullptr;
 	while (true)
-	{
-		try
-		{
-			pipeline >> hw_out_frame;
-
-			// Transfer hardware frame back to software
-			av::HWFramesContext::transfer_data(sw_out_frame, hw_out_frame);
-
-			// Write NV12 data to output file
-			if (fwrite(sw_out_frame->data[0], 1, out_size, fout) != out_size)
-			{
-				fprintf(stderr, "Failed to write Y plane\n");
-				throw;
-			}
-			if (fwrite(sw_out_frame->data[1], 1, out_size / 2, fout) !=
-				out_size / 2)
-			{
-				fprintf(stderr, "Failed to write UV plane\n");
-				throw;
-			}
-
-			frame_count++;
-			hw_out_frame.unref();
-		}
-		catch (const av::Error &e)
-		{
-			if (e.errnum == AVERROR_EOF)
-			{
-				// No more frames
-				break;
-			}
-			else
-			{
-				throw;
-			}
-		}
-	}
+		get_filtered_output();
 
 	printf("Processed %d frames\n", frame_count);
 
