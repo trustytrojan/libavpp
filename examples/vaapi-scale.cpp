@@ -26,7 +26,6 @@ extern "C"
 #include <av/Util.hpp>
 
 #include <format>
-#include <iostream>
 
 class ScalingPipeline
 {
